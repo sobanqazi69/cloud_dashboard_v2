@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/metric_gauge.dart';
 import '../../data/services/realtime_database_service.dart';
+import 'metric_detail_page.dart';
 import 'dart:developer' as developer;
 
 class DashboardPage extends StatefulWidget {
@@ -17,6 +18,21 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     developer.log('DashboardPage initialized');
+  }
+
+  void _navigateToMetricDetail(String metricType, double currentValue) {
+    try {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => MetricDetailPage(
+            metricType: metricType,
+            currentValue: currentValue,
+          ),
+        ),
+      );
+    } catch (error) {
+      developer.log('Error navigating to metric detail: $error');
+    }
   }
 
   @override
@@ -93,36 +109,48 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Column(
                           children: [
                             Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 8, bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A1A1A),
-                                  borderRadius: BorderRadius.circular(4),
+                              child: GestureDetector(
+                                onTap: () => _navigateToMetricDetail(
+                                  'oxygen_flow', 
+                                  data['oxygen_flow']?.toDouble() ?? 0.0
                                 ),
-                                padding: const EdgeInsets.all(16),
-                                child: MetricGauge(
-                                  title: 'Oxygen Flow',
-                                  value: data['oxygen_flow']?.toDouble() ?? 0.0,
-                                  unit: 'm³/hr',
-                                  maxValue: 50,
-                                  color: const Color(0xFF3B82F6),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8, bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1A1A1A),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: MetricGauge(
+                                    title: 'Oxygen Flow',
+                                    value: data['oxygen_flow']?.toDouble() ?? 0.0,
+                                    unit: 'm³/hr',
+                                    maxValue: 50,
+                                    color: const Color(0xFF3B82F6),
+                                  ),
                                 ),
                               ),
                             ),
                             Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A1A1A),
-                                  borderRadius: BorderRadius.circular(4),
+                              child: GestureDetector(
+                                onTap: () => _navigateToMetricDetail(
+                                  'oxygen_pressure', 
+                                  data['oxygen_pressure']?.toDouble() ?? 0.0
                                 ),
-                                padding: const EdgeInsets.all(16),
-                                child: MetricGauge(
-                                  title: 'Oxygen Pressure',
-                                  value: data['oxygen_pressure']?.toDouble() ?? 0.0,
-                                  unit: 'Bar',
-                                  maxValue: 10,
-                                  color: const Color(0xFF60A5FA),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1A1A1A),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: MetricGauge(
+                                    title: 'Oxygen Pressure',
+                                    value: data['oxygen_pressure']?.toDouble() ?? 0.0,
+                                    unit: 'Bar',
+                                    maxValue: 10,
+                                    color: const Color(0xFF60A5FA),
+                                  ),
                                 ),
                               ),
                             ),
@@ -135,52 +163,70 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Column(
                           children: [
                             Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A1A1A),
-                                  borderRadius: BorderRadius.circular(4),
+                              child: GestureDetector(
+                                onTap: () => _navigateToMetricDetail(
+                                  'oxygen_purity', 
+                                  data['oxygen_purity']?.toDouble() ?? 0.0
                                 ),
-                                padding: const EdgeInsets.all(16),
-                                child: MetricGauge(
-                                  title: 'Oxygen Purity',
-                                  value: data['oxygen_purity']?.toDouble() ?? 0.0,
-                                  unit: '%',
-                                  color: const Color(0xFF2563EB),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A1A1A),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                padding: const EdgeInsets.all(16),
-                                child: MetricGauge(
-                                  title: 'Running Hours',
-                                  value: data['running_hours']?.toDouble() ?? 0.0,
-                                  unit: 'hrs',
-                                  maxValue: 100,
-                                  color: const Color(0xFF1D4ED8),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1A1A1A),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: MetricGauge(
+                                    title: 'Oxygen Purity',
+                                    value: data['oxygen_purity']?.toDouble() ?? 0.0,
+                                    unit: '%',
+                                    color: const Color(0xFF2563EB),
+                                  ),
                                 ),
                               ),
                             ),
                             Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A1A1A),
-                                  borderRadius: BorderRadius.circular(4),
+                              child: GestureDetector(
+                                onTap: () => _navigateToMetricDetail(
+                                  'running_hours', 
+                                  data['running_hours']?.toDouble() ?? 0.0
                                 ),
-                                padding: const EdgeInsets.all(16),
-                                child: MetricGauge(
-                                  title: 'Temperature',
-                                  value: data['temp_1']?.toDouble() ?? 0.0,
-                                  unit: '°C',
-                                  maxValue: 100,
-                                  color: const Color(0xFF3B82F6),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1A1A1A),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: MetricGauge(
+                                    title: 'Running Hours',
+                                    value: data['running_hours']?.toDouble() ?? 0.0,
+                                    unit: 'hrs',
+                                    maxValue: 100,
+                                    color: const Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _navigateToMetricDetail(
+                                  'temp_1', 
+                                  data['temp_1']?.toDouble() ?? 0.0
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1A1A1A),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: MetricGauge(
+                                    title: 'Temperature',
+                                    value: data['temp_1']?.toDouble() ?? 0.0,
+                                    unit: '°C',
+                                    maxValue: 100,
+                                    color: const Color(0xFF3B82F6),
+                                  ),
                                 ),
                               ),
                             ),
