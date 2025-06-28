@@ -1,23 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
+  <!-- if you’re serving from the root, use just “/” here -->
+  <base href="/">
 
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
   <meta name="description" content="A new Flutter project.">
 
   <!-- iOS meta tags & icons -->
@@ -33,6 +21,30 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- 1) Firebase core + database SDKs (namespaced API) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <!-- 2) Your app’s Firebase config + initialization -->
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyDdIsJl581l1z2D68-Q-at4KLtHgF61gbc",
+      authDomain: "node-red-75bfc.firebaseapp.com",
+      databaseURL: "https://node-red-75bfc-default-rtdb.firebaseio.com",
+      projectId: "node-red-75bfc",
+      storageBucket: "node-red-75bfc.appspot.com",
+      messagingSenderId: "796326449899",
+      appId: "1:796326449899:web:b5bd56d3ed7922251264ae",
+      measurementId: "G-X1T1NCRPPD"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    // Optionally, you can grab a handle here if you need it in JS:
+    // var db = firebase.database();
+  </script>
+
+  <!-- 3) Then bootstrap Flutter -->
+  <script src="flutter_bootstrap.js" defer></script>
 </body>
 </html>
