@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
             end: Alignment.bottomRight,
             colors: [
               Colors.black,
-              Colors.blue.shade900.withOpacity(0.3),
+             // Colors.grey.shade900.withOpacity(0.3),
               Colors.black,
             ],
           ),
@@ -100,12 +100,12 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.blue.shade900.withOpacity(0.3),
+                        color: Colors.grey.shade900.withOpacity(0.3),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.shade900.withOpacity(0.1),
+                          color: Colors.grey.shade900.withOpacity(0.1),
                           blurRadius: 10,
                           spreadRadius: 1,
                         ),
@@ -120,19 +120,19 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _emailController,
                             decoration: InputDecoration(
                               labelText: 'Email',
-                              labelStyle: TextStyle(color: Colors.blue.shade100),
-                              prefixIcon: Icon(Icons.email_outlined, color: Colors.blue.shade300),
+                              labelStyle: TextStyle(color: Colors.grey.shade100),
+                              prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade300),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade900.withOpacity(0.3)),
+                                borderSide: BorderSide(color: Colors.grey.shade900.withOpacity(0.3)),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade900.withOpacity(0.3)),
+                                borderSide: BorderSide(color: Colors.grey.shade900.withOpacity(0.3)),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade400),
+                                borderSide: BorderSide(color: Colors.grey.shade400),
                               ),
                               filled: true,
                               fillColor: Colors.black.withOpacity(0.5),
@@ -154,19 +154,19 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _passwordController,
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              labelStyle: TextStyle(color: Colors.blue.shade100),
-                              prefixIcon: Icon(Icons.lock_outline, color: Colors.blue.shade300),
+                              labelStyle: TextStyle(color: Colors.grey.shade100),
+                              prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade300),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade900.withOpacity(0.3)),
+                                borderSide: BorderSide(color: Colors.grey.shade900.withOpacity(0.3)),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade900.withOpacity(0.3)),
+                                borderSide: BorderSide(color: Colors.grey.shade900.withOpacity(0.3)),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade400),
+                                borderSide: BorderSide(color: Colors.grey.shade400),
                               ),
                               filled: true,
                               fillColor: Colors.black.withOpacity(0.5),
@@ -200,10 +200,10 @@ class _LoginPageState extends State<LoginPage> {
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.shade900,
+                                backgroundColor: Colors.grey.shade900,
                                 foregroundColor: Colors.white,
                                 elevation: 4,
-                                shadowColor: Colors.blue.shade900.withOpacity(0.5),
+                                shadowColor: Colors.grey.shade900.withOpacity(0.5),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),

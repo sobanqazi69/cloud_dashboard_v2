@@ -21,20 +21,11 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -53,14 +44,43 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDdIsJl581l1z2D68-Q-at4KLtHgF61gbc',
-    appId: '1:796326449899:web:b5bd56d3ed7922251264ae',
-    messagingSenderId: '796326449899',
+    apiKey: 'AIzaSyBnvPHPXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with your actual API key
+    appId: 'XXXXXXXXXXXX', // Replace with your actual app ID
+    messagingSenderId: 'XXXXXXXXXXXX', // Replace with your actual sender ID
     projectId: 'node-red-75bfc',
     authDomain: 'node-red-75bfc.firebaseapp.com',
     databaseURL: 'https://node-red-75bfc-default-rtdb.firebaseio.com',
-    storageBucket: 'node-red-75bfc.firebasestorage.app',
-    measurementId: 'G-X1T1NCRPPD',
+    storageBucket: 'node-red-75bfc.appspot.com',
   );
 
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'YOUR-ANDROID-API-KEY',
+    appId: 'YOUR-ANDROID-APP-ID',
+    messagingSenderId: 'YOUR-SENDER-ID',
+    projectId: 'node-red-75bfc',
+    databaseURL: 'https://node-red-75bfc-default-rtdb.firebaseio.com',
+    storageBucket: 'node-red-75bfc.appspot.com',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'YOUR-IOS-API-KEY',
+    appId: 'YOUR-IOS-APP-ID',
+    messagingSenderId: 'YOUR-SENDER-ID',
+    projectId: 'node-red-75bfc',
+    databaseURL: 'https://node-red-75bfc-default-rtdb.firebaseio.com',
+    storageBucket: 'node-red-75bfc.appspot.com',
+    iosClientId: 'YOUR-IOS-CLIENT-ID',
+    iosBundleId: 'YOUR-IOS-BUNDLE-ID',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'YOUR-MACOS-API-KEY',
+    appId: 'YOUR-MACOS-APP-ID',
+    messagingSenderId: 'YOUR-SENDER-ID',
+    projectId: 'node-red-75bfc',
+    databaseURL: 'https://node-red-75bfc-default-rtdb.firebaseio.com',
+    storageBucket: 'node-red-75bfc.appspot.com',
+    iosClientId: 'YOUR-MACOS-CLIENT-ID',
+    iosBundleId: 'YOUR-MACOS-BUNDLE-ID',
+  );
 }
