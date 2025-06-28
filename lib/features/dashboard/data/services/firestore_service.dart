@@ -13,9 +13,13 @@ class FirestoreService {
       final DateTime now = DateTime.now();
       final DateTime startTime = now.subtract(Duration(hours: hours));
       
+      final startTimestamp = Timestamp.fromMillisecondsSinceEpoch(
+        startTime.millisecondsSinceEpoch
+      );
+      
       final QuerySnapshot querySnapshot = await _firestore
           .collection(metricType)
-          .where('timestamp', isGreaterThan: Timestamp.fromDate(startTime))
+          .where('timestamp', isGreaterThan: startTimestamp)
           .orderBy('timestamp', descending: false)
           .get();
 
@@ -27,7 +31,8 @@ class FirestoreService {
           
           DateTime timestamp;
           if (data['timestamp'] is Timestamp) {
-            timestamp = (data['timestamp'] as Timestamp).toDate();
+            final ts = data['timestamp'] as Timestamp;
+            timestamp = DateTime.fromMillisecondsSinceEpoch(ts.millisecondsSinceEpoch);
           } else if (data['timestamp'] is String) {
             timestamp = DateTime.parse(data['timestamp'] as String);
           } else {
@@ -69,9 +74,13 @@ class FirestoreService {
       final DateTime now = DateTime.now();
       final DateTime startTime = now.subtract(Duration(hours: hours));
       
+      final startTimestamp = Timestamp.fromMillisecondsSinceEpoch(
+        startTime.millisecondsSinceEpoch
+      );
+      
       return _firestore
           .collection(metricType)
-          .where('timestamp', isGreaterThan: Timestamp.fromDate(startTime))
+          .where('timestamp', isGreaterThan: startTimestamp)
           .orderBy('timestamp', descending: false)
           .snapshots()
           .map((querySnapshot) {
@@ -83,7 +92,8 @@ class FirestoreService {
             
             DateTime timestamp;
             if (data['timestamp'] is Timestamp) {
-              timestamp = (data['timestamp'] as Timestamp).toDate();
+              final ts = data['timestamp'] as Timestamp;
+              timestamp = DateTime.fromMillisecondsSinceEpoch(ts.millisecondsSinceEpoch);
             } else if (data['timestamp'] is String) {
               timestamp = DateTime.parse(data['timestamp'] as String);
             } else {

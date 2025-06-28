@@ -42,8 +42,8 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
   bool _showDataPoints = true;
   bool _showStats = true;
   bool _showAnimations = true;
-  double _lineWidth = 3.0;
-  double _pointSize = 4.0;
+  double _lineWidth = 2.0;
+  double _pointSize = 3.0;
   
   // Animation controllers
   late AnimationController _animationController;
@@ -154,8 +154,8 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
           } catch (error) {
         developer.log('Error getting theme colors: $error');
         return {
-          'primary': Color(0xFF00FFFF),
-          'secondary': Color(0xFFFF0080),
+          'primary': Colors.blue,
+          'secondary': Colors.grey,
           'background': Color(0xFF0A0A0A),
           'grid': Color(0xFF1A1A2E),
         };
@@ -171,51 +171,30 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
 
       final currentValue = widget.data.isNotEmpty ? widget.data.last.value : 0.0;
       final displayValue = _isHovering && _hoveredData != null ? _hoveredData!.value : currentValue;
-      final displayTime = _isHovering && _hoveredData != null ? _hoveredData!.timestamp : DateTime.now();
       final themeColors = _themeColors;
 
-      return AnimatedBuilder(
-        animation: _slideAnimation,
-        builder: (context, child) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
           return Container(
-            width: double.infinity,
-            height: double.infinity,
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
             decoration: BoxDecoration(
-              // gradient: LinearGradient(
-              //   begin: Alignment.topLeft,
-              //   end: Alignment.bottomRight,
-              //   colors: [
-              //     themeColors['background']!,
-              //     themeColors['background']!.withOpacity(0.8),
-              //   ],
-              // ),
+              color: themeColors['background'],
             ),
             child: Stack(
               children: [
                 // Control Panel
                 Positioned(
-                  top: 16,
-                  right: 16,
+                  top: 8,
+                  right: 8,
                   child: _buildControlPanel(themeColors),
                 ),
                 
-                // Statistics Panel
-                if (_showStats)
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: _buildStatsPanel(themeColors),
-                  ),
-                
                 // Main Chart with interactions
                 Positioned.fill(
+                  top: 300,
                   child: Padding(
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: _showStats ? 180 : 80,
-                      bottom: 60,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
                     child: MouseRegion(
                       onHover: (event) {
                         try {
@@ -263,6 +242,7 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
                           }
                         },
                         child: CustomPaint(
+                          size: Size(constraints.maxWidth, constraints.maxHeight),
                           painter: AdvancedChartPainter(
                             data: widget.data,
                             minValue: widget.minValue,
@@ -286,47 +266,30 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
                 
                 // Title and Current Value Display
                 Positioned(
-                  top: _showStats ? 200 : 50,
-                  left: 20,
-                  child: AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          // gradient: LinearGradient(
-                          //   colors: [
-                          //     themeColors['primary']!,
-                          //     themeColors['secondary']!,
-                          //   ],
-                          // ),
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: themeColors['primary']!.withOpacity(0.5),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          '${widget.title} ${displayValue.toStringAsFixed(2)} ${widget.unit ?? ''}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      );
-                    },
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: themeColors['background']!.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: themeColors['primary']!.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      '${widget.title} ${displayValue.toStringAsFixed(2)} ${widget.unit ?? ''}',
+                      style: TextStyle(
+                        color: themeColors['primary'],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
                 
                 // Hover tooltip
                 if (_isHovering && _hoveredData != null && _hoverPosition != null)
                   Positioned(
-                    left: math.min(_hoverPosition!.dx + 10, MediaQuery.of(context).size.width - 150),
+                    left: math.min(_hoverPosition!.dx + 10, constraints.maxWidth - 150),
                     top: math.max(_hoverPosition!.dy - 80, 50),
                     child: _buildAdvancedTooltip(themeColors),
                   ),
@@ -342,80 +305,24 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
   }
 
   Widget _buildControlPanel(Map<String, Color> themeColors) {
-    try {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: themeColors['background']!.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: themeColors['primary']!.withOpacity(0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: themeColors['primary']!.withOpacity(0.2),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Chart Type Selector
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildControlButton(Icons.show_chart, ChartType.line, 'Line'),
-                const SizedBox(width: 4),
-                _buildControlButton(Icons.area_chart, ChartType.area, 'Area'),
-                const SizedBox(width: 4),
-                _buildControlButton(Icons.bar_chart, ChartType.bars, 'Bars'),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Theme Selector
-            Wrap(
-              spacing: 4,
-              children: ChartTheme.values.map((theme) {
-                return GestureDetector(
-                  onTap: () => setState(() => _chartTheme = theme),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: _getThemePreviewColor(theme),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _chartTheme == theme ? Colors.white : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 8),
-            
-            // Toggle Options
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildToggleButton(Icons.grid_on, _showGrid, (value) => setState(() => _showGrid = value)),
-                const SizedBox(width: 4),
-                _buildToggleButton(Icons.scatter_plot, _showDataPoints, (value) => setState(() => _showDataPoints = value)),
-                const SizedBox(width: 4),
-                _buildToggleButton(Icons.bar_chart, _showStats, (value) => setState(() => _showStats = value)),
-                const SizedBox(width: 4),
-                _buildToggleButton(Icons.animation, _showAnimations, (value) => setState(() => _showAnimations = value)),
-              ],
-            ),
-          ],
-        ),
-      );
-    } catch (error) {
-      developer.log('Error building control panel: $error');
-      return Container();
-    }
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: themeColors['background']!.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: themeColors['primary']!.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildControlButton(Icons.show_chart, ChartType.line, 'Line'),
+          const SizedBox(width: 4),
+          _buildControlButton(Icons.area_chart, ChartType.area, 'Area'),
+          const SizedBox(width: 4),
+          _buildControlButton(Icons.bar_chart, ChartType.bars, 'Bars'),
+        ],
+      ),
+    );
   }
 
   Widget _buildControlButton(IconData icon, ChartType type, String tooltip) {
@@ -450,83 +357,7 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
     }
   }
 
-  Widget _buildToggleButton(IconData icon, bool value, Function(bool) onChanged) {
-    try {
-      final themeColors = _themeColors;
-      
-      return GestureDetector(
-        onTap: () => onChanged(!value),
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: value ? themeColors['primary']!.withOpacity(0.2) : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: value ? themeColors['primary']! : themeColors['grid']!,
-            ),
-          ),
-          child: Icon(
-            icon,
-            size: 14,
-            color: value ? themeColors['primary'] : Colors.grey,
-          ),
-        ),
-      );
-    } catch (error) {
-      developer.log('Error building toggle button: $error');
-      return Container();
-    }
-  }
-
-  Widget _buildStatsPanel(Map<String, Color> themeColors) {
-    try {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: themeColors['background']!.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: themeColors['primary']!.withOpacity(0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: themeColors['primary']!.withOpacity(0.2),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-              '📊 Statistics',
-              style: TextStyle(
-                color: themeColors['primary'],
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildStatRow('Current', _currentStat, themeColors['primary']!),
-            _buildStatRow('Average', _avgStat, themeColors['secondary']!),
-            _buildStatRow('Maximum', _maxStat, Colors.green),
-            _buildStatRow('Minimum', _minStat, Colors.orange),
-            const SizedBox(height: 8),
-            Text(
-              '📈 Data Points: ${widget.data.length}',
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      );
-    } catch (error) {
-      developer.log('Error building stats panel: $error');
-      return Container();
-    }
-  }
+ 
 
   Widget _buildStatRow(String label, double value, Color color) {
     try {
@@ -816,7 +647,7 @@ class AdvancedChartPainter extends CustomPainter {
     try {
       if (data.isEmpty) return;
 
-      const padding = 50.0;
+      const padding = 20.0; // Reduced padding
       final chartRect = Rect.fromLTRB(
         padding,
         padding,
@@ -824,18 +655,9 @@ class AdvancedChartPainter extends CustomPainter {
         size.height - padding,
       );
 
-      // Draw background gradient
-      final backgroundGradient = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          themeColors['background']!.withOpacity(0.1),
-          themeColors['background']!.withOpacity(0.3),
-        ],
-      );
-      
+      // Draw background
       final backgroundPaint = Paint()
-        ..shader = backgroundGradient.createShader(chartRect);
+        ..color = themeColors['background']!;
       canvas.drawRect(chartRect, backgroundPaint);
 
       // Draw grid if enabled
@@ -843,31 +665,32 @@ class AdvancedChartPainter extends CustomPainter {
         _drawAdvancedGrid(canvas, chartRect);
       }
 
-      // Draw chart based on type
+      // Calculate the visible range of values
+      final visibleMin = minValue - ((maxValue - minValue) * 0.1); // Add 10% padding
+      final visibleMax = maxValue + ((maxValue - minValue) * 0.1);
+
       switch (chartType) {
         case ChartType.line:
-          _drawLineChart(canvas, chartRect);
+          _drawLineChart(canvas, chartRect, visibleMin, visibleMax);
           break;
         case ChartType.area:
-          _drawAreaChart(canvas, chartRect);
+          _drawAreaChart(canvas, chartRect, visibleMin, visibleMax);
           break;
         case ChartType.bars:
-          _drawBarChart(canvas, chartRect);
+          _drawBarChart(canvas, chartRect, visibleMin, visibleMax);
           break;
       }
 
-      // Draw data points if enabled
       if (showDataPoints) {
-        _drawDataPoints(canvas, chartRect);
+        _drawDataPoints(canvas, chartRect, visibleMin, visibleMax);
       }
 
-      // Draw hover indicator
       if (hoveredData != null) {
-        _drawHoverIndicator(canvas, chartRect);
+        _drawHoverIndicator(canvas, chartRect, visibleMin, visibleMax);
       }
 
     } catch (error) {
-      developer.log('Error painting advanced chart: $error');
+      developer.log('Error painting chart: $error');
     }
   }
 
@@ -919,7 +742,7 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  void _drawLineChart(Canvas canvas, Rect chartRect) {
+  void _drawLineChart(Canvas canvas, Rect chartRect, double visibleMin, double visibleMax) {
     try {
       if (data.isEmpty) return;
 
@@ -938,7 +761,7 @@ class AdvancedChartPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
-      final path = _createPath(chartRect);
+      final path = _createPath(chartRect, visibleMin, visibleMax);
       
       // Draw glow effect
       canvas.drawPath(path, glowPaint);
@@ -950,7 +773,7 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  void _drawAreaChart(Canvas canvas, Rect chartRect) {
+  void _drawAreaChart(Canvas canvas, Rect chartRect, double visibleMin, double visibleMax) {
     try {
       if (data.isEmpty) return;
 
@@ -976,8 +799,8 @@ class AdvancedChartPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
 
-      final areaPath = _createAreaPath(chartRect);
-      final linePath = _createPath(chartRect);
+      final areaPath = _createAreaPath(chartRect, visibleMin, visibleMax);
+      final linePath = _createPath(chartRect, visibleMin, visibleMax);
 
       // Draw area with animation
       final animatedAreaPath = Path();
@@ -997,11 +820,15 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  void _drawBarChart(Canvas canvas, Rect chartRect) {
+  void _drawBarChart(Canvas canvas, Rect chartRect, double visibleMin, double visibleMax) {
     try {
       if (data.isEmpty) return;
 
-      final barWidth = chartRect.width / data.length * 0.8;
+      final barWidth = math.min(
+        chartRect.width / data.length * 0.8,
+        20.0 // Maximum bar width
+      );
+      
       final startTime = data.first.timestamp.millisecondsSinceEpoch;
       final endTime = data.last.timestamp.millisecondsSinceEpoch;
       final timeRange = endTime - startTime;
@@ -1010,7 +837,10 @@ class AdvancedChartPainter extends CustomPainter {
         final dataPoint = data[i];
         final x = chartRect.left + 
             (chartRect.width * (dataPoint.timestamp.millisecondsSinceEpoch - startTime) / timeRange);
-        final barHeight = (chartRect.height * (dataPoint.value - minValue) / (maxValue - minValue)) * animationProgress;
+        
+        // Normalize the value between visibleMin and visibleMax
+        final normalizedValue = (dataPoint.value - visibleMin) / (visibleMax - visibleMin);
+        final barHeight = chartRect.height * normalizedValue * animationProgress;
         final y = chartRect.bottom - barHeight;
 
         final barGradient = LinearGradient(
@@ -1037,7 +867,7 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  void _drawDataPoints(Canvas canvas, Rect chartRect) {
+  void _drawDataPoints(Canvas canvas, Rect chartRect, double visibleMin, double visibleMax) {
     try {
       if (data.isEmpty) return;
 
@@ -1049,7 +879,7 @@ class AdvancedChartPainter extends CustomPainter {
         final x = chartRect.left + 
             (chartRect.width * (dataPoint.timestamp.millisecondsSinceEpoch - startTime) / timeRange);
         final y = chartRect.bottom - 
-            (chartRect.height * (dataPoint.value - minValue) / (maxValue - minValue));
+            (chartRect.height * (dataPoint.value - visibleMin) / (visibleMax - visibleMin));
 
         // Draw glow effect
         final glowPaint = Paint()
@@ -1077,7 +907,7 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  void _drawHoverIndicator(Canvas canvas, Rect chartRect) {
+  void _drawHoverIndicator(Canvas canvas, Rect chartRect, double visibleMin, double visibleMax) {
     try {
       if (hoveredData == null || data.isEmpty) return;
 
@@ -1088,7 +918,7 @@ class AdvancedChartPainter extends CustomPainter {
       final x = chartRect.left + 
           (chartRect.width * (hoveredData!.timestamp.millisecondsSinceEpoch - startTime) / timeRange);
       final y = chartRect.bottom - 
-          (chartRect.height * (hoveredData!.value - minValue) / (maxValue - minValue));
+          (chartRect.height * (hoveredData!.value - visibleMin) / (visibleMax - visibleMin));
 
       // Draw vertical line with glow
       final verticalLinePaint = Paint()
@@ -1138,7 +968,7 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  Path _createPath(Rect chartRect) {
+  Path _createPath(Rect chartRect, double visibleMin, double visibleMax) {
     try {
       final path = Path();
       if (data.isEmpty) return path;
@@ -1152,7 +982,7 @@ class AdvancedChartPainter extends CustomPainter {
         final x = chartRect.left + 
             (chartRect.width * (dataPoint.timestamp.millisecondsSinceEpoch - startTime) / timeRange);
         final y = chartRect.bottom - 
-            (chartRect.height * (dataPoint.value - minValue) / (maxValue - minValue));
+            (chartRect.height * (dataPoint.value - visibleMin) / (visibleMax - visibleMin));
 
         if (i == 0) {
           path.moveTo(x, y);
@@ -1161,7 +991,7 @@ class AdvancedChartPainter extends CustomPainter {
           final prevX = chartRect.left + 
               (chartRect.width * (prevDataPoint.timestamp.millisecondsSinceEpoch - startTime) / timeRange);
           final prevY = chartRect.bottom - 
-              (chartRect.height * (prevDataPoint.value - minValue) / (maxValue - minValue));
+              (chartRect.height * (prevDataPoint.value - visibleMin) / (visibleMax - visibleMin));
           
           final controlX = prevX + (x - prevX) / 2;
           path.quadraticBezierTo(controlX, prevY, x, y);
@@ -1175,9 +1005,9 @@ class AdvancedChartPainter extends CustomPainter {
     }
   }
 
-  Path _createAreaPath(Rect chartRect) {
+  Path _createAreaPath(Rect chartRect, double visibleMin, double visibleMax) {
     try {
-      final path = _createPath(chartRect);
+      final path = _createPath(chartRect, visibleMin, visibleMax);
       if (data.isEmpty) return path;
 
       final startTime = data.first.timestamp.millisecondsSinceEpoch;
