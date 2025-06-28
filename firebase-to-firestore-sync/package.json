@@ -1,0 +1,14 @@
+{
+  "name": "firebase-to-firestore-sync",
+  "version": "1.0.0",
+  "description": "Sync data from Firebase Realtime Database to Firestore",
+  "main": "api/sync.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

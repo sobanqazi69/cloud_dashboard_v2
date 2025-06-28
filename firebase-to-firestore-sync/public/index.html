@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase to Firestore Sync</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0051d5;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #e6fffa;
+            border: 1px solid #38d9a9;
+            color: #087f5b;
+        }
+        .error {
+            background: #ffe0e6;
+            border: 1px solid #f783ac;
+            color: #c92a2a;
+        }
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #64b5f6;
+            color: #1565c0;
+        }
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Firebase to Firestore Sync</h1>
+        
+        <div class="status" id="status">Ready to sync data</div>
+        
+        <button id="syncBtn" onclick="triggerSync()">
+            🚀 Trigger Data Sync
+        </button>
+        
+        <button id="testBtn" onclick="testConnection()">
+            🔍 Test Connection
+        </button>
+        
+        <div id="result"></div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 6px;">
+            <h3>How it works:</h3>
+            <ul>
+                <li>Reads current data from Firebase Realtime Database</li>
+                <li>Creates new documents in 5 Firestore collections:</li>
+                <ul>
+                    <li>oxygen_flow</li>
+                    <li>oxygen_pressure</li>
+                    <li>oxygen_purity</li>
+                    <li>running_hours</li>
+                    <li>temp_1</li>
+                </ul>
+                <li>Each document contains: value, timestamp, created_at</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center; color: #666; font-size: 14px;">
+            <p>Function URL: <code>https://firebasetofirebase-f5khiyeq6-sobans-projects-af793893.vercel.app/api/sync</code></p>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function showResult(data, type = 'info') {
+            const result = document.getElementById('result');
+            result.innerHTML = `<div class="result ${type}">${JSON.stringify(data, null, 2)}</div>`;
+        }
+
+        async function triggerSync() {
+            const btn = document.getElementById('syncBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Syncing...';
+            updateStatus('Triggering data sync...', 'info');
+
+            try {
+                const response = await fetch('/api/sync', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    updateStatus('✅ Sync completed successfully!', 'success');
+                    showResult(data, 'success');
+                } else {
+                    updateStatus('❌ Sync failed', 'error');
+                    showResult(data, 'error');
+                }
+            } catch (error) {
+                updateStatus('❌ Connection failed', 'error');
+                showResult({ error: error.message }, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Trigger Data Sync';
+            }
+        }
+
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Testing...';
+            updateStatus('Testing connection...', 'info');
+
+            try {
+                // Test Firebase Realtime Database directly
+                const rtdbResponse = await fetch('https://node-red-75bfc-default-rtdb.firebaseio.com/.json');
+                const rtdbData = await rtdbResponse.json();
+                
+                updateStatus('✅ Connection test completed', 'success');
+                showResult({ 
+                    message: 'Firebase Realtime Database connection successful',
+                    data: rtdbData 
+                }, 'success');
+            } catch (error) {
+                updateStatus('❌ Connection test failed', 'error');
+                showResult({ error: error.message }, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Test Connection';
+            }
+        }
+
+        // Auto-refresh every 30 seconds to show updated timestamp
+        setInterval(() => {
+            const now = new Date().toLocaleString();
+            document.querySelector('.status').setAttribute('title', `Last updated: ${now}`);
+        }, 30000);
+    </script>
+</body>
+</html> 
