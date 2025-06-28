@@ -44,13 +44,14 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBnvPHPXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with your actual API key
-    appId: 'XXXXXXXXXXXX', // Replace with your actual app ID
-    messagingSenderId: 'XXXXXXXXXXXX', // Replace with your actual sender ID
-    projectId: 'node-red-75bfc',
-    authDomain: 'node-red-75bfc.firebaseapp.com',
-    databaseURL: 'https://node-red-75bfc-default-rtdb.firebaseio.com',
-    storageBucket: 'node-red-75bfc.appspot.com',
+   apiKey: "AIzaSyDdIsJl581l1z2D68-Q-at4KLtHgF61gbc",
+  authDomain: "node-red-75bfc.firebaseapp.com",
+  databaseURL: "https://node-red-75bfc-default-rtdb.firebaseio.com",
+  projectId: "node-red-75bfc",
+  storageBucket: "node-red-75bfc.firebasestorage.app",
+  messagingSenderId: "796326449899",
+  appId: "1:796326449899:web:b5bd56d3ed7922251264ae",
+  measurementId: "G-X1T1NCRPPD"
   );
 
   static const FirebaseOptions android = FirebaseOptions(

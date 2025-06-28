@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import '../../../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -33,18 +34,25 @@ class _LoginPageState extends State<LoginPage> {
         _errorMessage = null;
       });
 
+      developer.log('Starting login process for email: ${_emailController.text.trim()}');
+      
       await _authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      
+      developer.log('Login successful, navigation will be handled by auth state changes');
       // Navigation will be handled by auth state changes
     } catch (e) {
+      developer.log('Login failed with error: $e');
       if (mounted) {
         setState(() {
+          // The error from AuthService is already a user-friendly message
           _errorMessage = e.toString();
         });
       }
     } finally {
+      developer.log('Login process completed, setting loading to false');
       if (mounted) {
         setState(() {
           _isLoading = false;
