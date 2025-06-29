@@ -172,27 +172,7 @@ class FirestoreService {
     }
   }
 
-  double getMaxValueForMetricType(String metricType) {
-    try {
-      switch (metricType) {
-        case 'oxygen_flow':
-          return 50;
-        case 'oxygen_pressure':
-          return 10;
-        case 'oxygen_purity':
-          return 100;
-        case 'running_hours':
-          return 100;
-        case 'temp_1':
-          return 100;
-        default:
-          return 100;
-      }
-    } catch (error) {
-      developer.log('Error getting max value for $metricType: $error');
-      return 100;
-    }
-  }
+  
 
   Color getColorForMetricType(String metricType) {
     try {

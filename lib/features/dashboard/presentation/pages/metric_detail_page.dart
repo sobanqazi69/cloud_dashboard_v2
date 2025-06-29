@@ -83,24 +83,24 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
         body: Column(
           children: [
             // Time Range Selector
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildTimeRangeButton('1h'),
-                  _buildTimeRangeButton('6h'),
-                  _buildTimeRangeButton('12h'),
-                  _buildTimeRangeButton('24h'),
-                  _buildTimeRangeButton('7d'),
-                ],
-              ),
-            ),
+            // Container(
+            //   margin: const EdgeInsets.all(16),
+            //   padding: const EdgeInsets.all(8),
+            //   decoration: BoxDecoration(
+            //     color: const Color(0xFF1A1A1A),
+            //     borderRadius: BorderRadius.circular(8),
+            //   ),
+            //   child: Row(
+            //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            //     children: [
+            //       _buildTimeRangeButton('1h'),
+            //       _buildTimeRangeButton('6h'),
+            //       _buildTimeRangeButton('12h'),
+            //       _buildTimeRangeButton('24h'),
+            //       _buildTimeRangeButton('7d'),
+            //     ],
+            //   ),
+            // ),
             
             // Current Value Card
             Container(
@@ -159,7 +159,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Column(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
@@ -210,10 +210,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
                         data: data,
                         title: _firestoreService.getDisplayNameForMetricType(widget.metricType),
                         minValue: 0,
-                        maxValue: _firestoreService.getMaxValueForMetricType(widget.metricType),
-                        lineColor: _firestoreService.getColorForMetricType(widget.metricType),
-                        areaColor: _firestoreService.getColorForMetricType(widget.metricType).withOpacity(0.2),
-                                                 unit: _firestoreService.getUnitForMetricType(widget.metricType),
+                        maxValue: double.infinity,  // Let the chart calculate its own max value
                       );
                     } catch (error) {
                       developer.log('Error building chart: $error');
