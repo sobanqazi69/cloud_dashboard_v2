@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../shared/widgets/metric_gauge.dart';
-import '../../data/services/realtime_database_service.dart';
+import '../../../../services/sensor_api_service.dart';
+import '../../../../models/sensor_data.dart';
 import 'metric_detail_page.dart';
 import 'dart:developer' as developer;
 
@@ -13,20 +14,22 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final RealtimeDatabaseService _databaseService = RealtimeDatabaseService();
+  final SensorApiService _apiService = SensorApiService();
+  late Stream<SensorData?> _sensorDataStream;
 
   @override
   void initState() {
     super.initState();
     developer.log('DashboardPage initialized');
+    _sensorDataStream = _apiService.getLatestSensorDataStream();
   }
 
-  void _navigateToMetricDetail(String metricType, double currentValue) {
+  void _navigateToMetricDetail(SensorMetric metric, double currentValue) {
     try {
       Navigator.of(context).push(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => MetricDetailPage(
-            metricType: metricType,
+            metric: metric,
             currentValue: currentValue,
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -111,8 +114,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: StreamBuilder<Map<String, dynamic>>(
-        stream: _databaseService.getMetricsStream(),
+      body: StreamBuilder<SensorData?>(
+        stream: _sensorDataStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             developer.log('Error in StreamBuilder: ${snapshot.error}');
@@ -121,7 +124,7 @@ class _DashboardPageState extends State<DashboardPage> {
             );
           }
 
-          final data = snapshot.data ?? {};
+          final sensorData = snapshot.data;
           
           return Container(
             color: const Color(0xFF0A0A0A),
@@ -139,181 +142,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Left column - 2 items
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: !snapshot.hasData
-                                  ? _buildShimmerGauge()
-                                  : Hero(
-                                      tag: 'metric-oxygen_flow',
-                                      child: Material(
-                                        type: MaterialType.transparency,
-                                        child: GestureDetector(
-                                          onTap: () => _navigateToMetricDetail(
-                                            'oxygen_flow',
-                                            data['oxygen_flow']?.toDouble() ?? 0.0
-                                          ),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(right: 8, bottom: 8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF1A1A1A),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            padding: const EdgeInsets.all(16),
-                                            child: MetricGauge(
-                                              title: 'Oxygen Flow',
-                                              value: data['oxygen_flow']?.toDouble() ?? 0.0,
-                                              unit: 'm³/hr',
-                                              maxValue: 50,
-                                              color: const Color(0xFF3B82F6),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                            Expanded(
-                              child: !snapshot.hasData
-                                  ? _buildShimmerGauge()
-                                  : Hero(
-                                      tag: 'metric-oxygen_pressure',
-                                      child: Material(
-                                        type: MaterialType.transparency,
-                                        child: GestureDetector(
-                                          onTap: () => _navigateToMetricDetail(
-                                            'oxygen_pressure',
-                                            data['oxygen_pressure']?.toDouble() ?? 0.0
-                                          ),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(right: 8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF1A1A1A),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            padding: const EdgeInsets.all(16),
-                                            child: MetricGauge(
-                                              title: 'Oxygen Pressure',
-                                              value: data['oxygen_pressure']?.toDouble() ?? 0.0,
-                                              unit: 'Bar',
-                                              maxValue: 10,
-                                              color: const Color(0xFF60A5FA),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Right column - 3 items
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: !snapshot.hasData
-                                  ? _buildShimmerGauge()
-                                  : Hero(
-                                      tag: 'metric-oxygen_purity',
-                                      child: Material(
-                                        type: MaterialType.transparency,
-                                        child: GestureDetector(
-                                          onTap: () => _navigateToMetricDetail(
-                                            'oxygen_purity',
-                                            data['oxygen_purity']?.toDouble() ?? 0.0
-                                          ),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(bottom: 8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF1A1A1A),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            padding: const EdgeInsets.all(16),
-                                            child: MetricGauge(
-                                              title: 'Oxygen Purity',
-                                              value: data['oxygen_purity']?.toDouble() ?? 0.0,
-                                              unit: '%',
-                                              color: const Color(0xFF2563EB),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                            Expanded(
-                              child: !snapshot.hasData
-                                  ? _buildShimmerGauge()
-                                  : Hero(
-                                      tag: 'metric-running_hours',
-                                      child: Material(
-                                        type: MaterialType.transparency,
-                                        child: GestureDetector(
-                                          onTap: () => _navigateToMetricDetail(
-                                            'running_hours',
-                                            data['running_hours']?.toDouble() ?? 0.0
-                                          ),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(bottom: 8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF1A1A1A),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            padding: const EdgeInsets.all(16),
-                                            child: MetricGauge(
-                                              title: 'Running Hours',
-                                              value: data['running_hours']?.toDouble() ?? 0.0,
-                                              unit: 'hrs',
-                                              maxValue: 100,
-                                              color: const Color(0xFF1D4ED8),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                            Expanded(
-                              child: !snapshot.hasData
-                                  ? _buildShimmerGauge()
-                                  : Hero(
-                                      tag: 'metric-temp_1',
-                                      child: Material(
-                                        type: MaterialType.transparency,
-                                        child: GestureDetector(
-                                          onTap: () => _navigateToMetricDetail(
-                                            'temp_1',
-                                            data['temp_1']?.toDouble() ?? 0.0
-                                          ),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(bottom: 8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF1A1A1A),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            padding: const EdgeInsets.all(16),
-                                            child: MetricGauge(
-                                              title: 'Temperature',
-                                              value: data['temp_1']?.toDouble() ?? 0.0,
-                                              unit: '°C',
-                                              maxValue: 100,
-                                              color: const Color(0xFF1D4ED8),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _buildMetricsGrid(sensorData, !snapshot.hasData),
                 ),
               ],
             ),
@@ -321,5 +150,168 @@ class _DashboardPageState extends State<DashboardPage> {
         },
       ),
     );
+  }
+
+  Widget _buildMetricsGrid(SensorData? sensorData, bool isLoading) {
+    // Define all metrics to display
+    final metrics = [
+      SensorMetric.oxygen,
+      SensorMetric.oxyFlow,
+      SensorMetric.oxyPressure,
+      SensorMetric.compLoad,
+      SensorMetric.compRunningHour,
+      SensorMetric.airiTemp,
+      SensorMetric.airoTemp,
+      SensorMetric.airOutletp,
+      SensorMetric.drypdpTemp,
+      SensorMetric.boostoTemp,
+      SensorMetric.boosterHour,
+      SensorMetric.compOnStatus,
+      SensorMetric.boosterStatus,
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Determine grid layout based on screen size
+        int crossAxisCount;
+        double childAspectRatio;
+        
+        if (constraints.maxWidth < 600) {
+          crossAxisCount = 2;
+          childAspectRatio = 1.0;
+        } else if (constraints.maxWidth < 900) {
+          crossAxisCount = 3;
+          childAspectRatio = 1.1;
+        } else if (constraints.maxWidth < 1200) {
+          crossAxisCount = 4;
+          childAspectRatio = 1.2;
+        } else {
+          crossAxisCount = 5;
+          childAspectRatio = 1.3;
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(8),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: childAspectRatio,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: metrics.length,
+          itemBuilder: (context, index) {
+            final metric = metrics[index];
+            
+            if (isLoading || sensorData == null) {
+              return _buildShimmerGauge();
+            }
+
+            final value = metric.getValue(sensorData);
+            final maxValue = _getMaxValueForMetric(metric);
+            final color = _getColorForMetric(metric);
+
+            return Hero(
+              tag: 'metric-${metric.key}',
+              child: Material(
+                type: MaterialType.transparency,
+                child: GestureDetector(
+                  onTap: () => _navigateToMetricDetail(metric, value),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.grey.withOpacity(0.1),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: MetricGauge(
+                        title: metric.displayName,
+                        value: value,
+                        unit: metric.unit,
+                        maxValue: maxValue,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  double _getMaxValueForMetric(SensorMetric metric) {
+    switch (metric) {
+      case SensorMetric.oxygen:
+        return 100;
+      case SensorMetric.oxyFlow:
+        return 50;
+      case SensorMetric.oxyPressure:
+        return 10;
+      case SensorMetric.compLoad:
+        return 100;
+      case SensorMetric.compRunningHour:
+        return 1000;
+      case SensorMetric.airiTemp:
+      case SensorMetric.airoTemp:
+      case SensorMetric.boostoTemp:
+      case SensorMetric.drypdpTemp:
+        return 100;
+      case SensorMetric.airOutletp:
+        return 15;
+      case SensorMetric.boosterHour:
+        return 1000;
+      case SensorMetric.compOnStatus:
+      case SensorMetric.boosterStatus:
+        return 1;
+    }
+  }
+
+  Color _getColorForMetric(SensorMetric metric) {
+    switch (metric) {
+      case SensorMetric.oxygen:
+        return const Color(0xFF10B981); // Green for oxygen purity
+      case SensorMetric.oxyFlow:
+        return const Color(0xFF3B82F6); // Blue for flow
+      case SensorMetric.oxyPressure:
+        return const Color(0xFF6366F1); // Indigo for pressure
+      case SensorMetric.compLoad:
+        return const Color(0xFFF59E0B); // Amber for load
+      case SensorMetric.compRunningHour:
+        return const Color(0xFF8B5CF6); // Purple for hours
+      case SensorMetric.airiTemp:
+        return const Color(0xFFEF4444); // Red for inlet temp
+      case SensorMetric.airoTemp:
+        return const Color(0xFFEC4899); // Pink for outlet temp
+      case SensorMetric.airOutletp:
+        return const Color(0xFF06B6D4); // Cyan for air pressure
+      case SensorMetric.drypdpTemp:
+        return const Color(0xFF84CC16); // Lime for dryer temp
+      case SensorMetric.boostoTemp:
+        return const Color(0xFFF97316); // Orange for booster temp
+      case SensorMetric.boosterHour:
+        return const Color(0xFF64748B); // Slate for booster hours
+      case SensorMetric.compOnStatus:
+        return const Color(0xFF22C55E); // Green for compressor status
+      case SensorMetric.boosterStatus:
+        return const Color(0xFF0EA5E9); // Sky for booster status
+    }
+  }
+
+  @override
+  void dispose() {
+    _apiService.dispose();
+    super.dispose();
   }
 } 

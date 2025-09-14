@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../../shared/widgets/modern_metric_chart.dart';
-import '../../../../shared/widgets/paginated_data_list.dart';
+import '../../../../shared/widgets/metric_chart.dart';
 import '../../../../services/sensor_api_service.dart';
 import '../../../../models/sensor_data.dart';
 import '../../domain/models/metric_data.dart';
@@ -23,6 +22,7 @@ class MetricDetailPage extends StatefulWidget {
 
 class _MetricDetailPageState extends State<MetricDetailPage> {
   final SensorApiService _apiService = SensorApiService();
+  String _selectedTimeRange = '24h';
   int _selectedHours = 24;
   late Stream<List<SensorData>> _historicalDataStream;
 
@@ -33,6 +33,36 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
     _historicalDataStream = _apiService.getHistoricalDataStream(hours: _selectedHours);
   }
 
+  void _onTimeRangeChanged(String timeRange) {
+    try {
+      setState(() {
+        _selectedTimeRange = timeRange;
+        switch (timeRange) {
+          case '1h':
+            _selectedHours = 1;
+            break;
+          case '6h':
+            _selectedHours = 6;
+            break;
+          case '12h':
+            _selectedHours = 12;
+            break;
+          case '24h':
+            _selectedHours = 24;
+            break;
+          case '7d':
+            _selectedHours = 168; // 7 * 24
+            break;
+          default:
+            _selectedHours = 24;
+        }
+        // Update the stream with new hours
+        _historicalDataStream = _apiService.getHistoricalDataStream(hours: _selectedHours);
+      });
+    } catch (error) {
+      developer.log('Error changing time range: $error');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +203,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
 
                               return ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: ModernMetricChart(
+                                child: MetricChart(
                                   data: metricDataPoints.map((point) => MetricData(
                                     timestamp: point.timestamp,
                                     value: point.value,
@@ -181,10 +211,8 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
                                     unit: widget.metric.unit,
                                   )).toList(),
                                   title: widget.metric.displayName,
-                                  unit: widget.metric.unit,
                                   minValue: 0,
                                   maxValue: double.infinity,
-                                  primaryColor: _getColorForMetric(widget.metric),
                                 ),
                               );
                             },
@@ -298,10 +326,91 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
                               child: StreamBuilder<List<SensorData>>(
                                 stream: _apiService.getHistoricalDataStream(hours: 1),
                                 builder: (context, snapshot) {
-                                  return PaginatedDataList(
-                                    data: snapshot.data ?? [],
-                                    metric: widget.metric,
-                                    primaryColor: _getColorForMetric(widget.metric),
+                                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                    return const Center(
+                                      child: Text(
+                                        'Loading mini chart...',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    );
+                                  }
+
+                                  final data = snapshot.data!;
+                                  final currentValue = widget.metric.getValue(data.last);
+                                  final previousValue = data.length > 1 
+                                      ? widget.metric.getValue(data[data.length - 2]) 
+                                      : currentValue;
+                                  final change = currentValue - previousValue;
+                                  final changePercent = previousValue != 0 ? (change / previousValue) * 100 : 0;
+
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Last Hour',
+                                                style: TextStyle(
+                                                  color: Colors.grey.withOpacity(0.7),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    change >= 0 ? Icons.trending_up : Icons.trending_down,
+                                                    color: change >= 0 ? Colors.green : Colors.red,
+                                                    size: 12,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${changePercent.abs().toStringAsFixed(1)}%',
+                                                    style: TextStyle(
+                                                      color: change >= 0 ? Colors.green : Colors.red,
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF4169E1).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Text(
+                                              'Live',
+                                              style: TextStyle(
+                                                color: Color(0xFF4169E1),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Expanded(
+                                        child: Center(
+                                          child: Text(
+                                            'Mini Chart Area',
+                                            style: TextStyle(
+                                              color: Colors.grey.withOpacity(0.5),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   );
                                 },
                               ),
@@ -349,7 +458,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
 
                           return ClipRRect(
                             borderRadius: BorderRadius.circular(16),
-                            child: ModernMetricChart(
+                            child: MetricChart(
                               data: metricDataPoints.map((point) => MetricData(
                                 timestamp: point.timestamp,
                                 value: point.value,
@@ -357,10 +466,8 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
                                 unit: widget.metric.unit,
                               )).toList(),
                               title: widget.metric.displayName,
-                              unit: widget.metric.unit,
                               minValue: 0,
                               maxValue: double.infinity,
-                              primaryColor: _getColorForMetric(widget.metric),
                             ),
                           );
                         },
@@ -458,37 +565,6 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
         ],
       ),
     );
-  }
-
-  Color _getColorForMetric(SensorMetric metric) {
-    switch (metric) {
-      case SensorMetric.oxygen:
-        return const Color(0xFF10B981); // Green for oxygen purity
-      case SensorMetric.oxyFlow:
-        return const Color(0xFF3B82F6); // Blue for flow
-      case SensorMetric.oxyPressure:
-        return const Color(0xFF6366F1); // Indigo for pressure
-      case SensorMetric.compLoad:
-        return const Color(0xFFF59E0B); // Amber for load
-      case SensorMetric.compRunningHour:
-        return const Color(0xFF8B5CF6); // Purple for hours
-      case SensorMetric.airiTemp:
-        return const Color(0xFFEF4444); // Red for inlet temp
-      case SensorMetric.airoTemp:
-        return const Color(0xFFEC4899); // Pink for outlet temp
-      case SensorMetric.airOutletp:
-        return const Color(0xFF06B6D4); // Cyan for air pressure
-      case SensorMetric.drypdpTemp:
-        return const Color(0xFF84CC16); // Lime for dryer temp
-      case SensorMetric.boostoTemp:
-        return const Color(0xFFF97316); // Orange for booster temp
-      case SensorMetric.boosterHour:
-        return const Color(0xFF64748B); // Slate for booster hours
-      case SensorMetric.compOnStatus:
-        return const Color(0xFF22C55E); // Green for compressor status
-      case SensorMetric.boosterStatus:
-        return const Color(0xFF0EA5E9); // Sky for booster status
-    }
   }
 
   @override
