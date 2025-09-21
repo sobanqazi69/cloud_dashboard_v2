@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/sensor_data.dart';
 
 class SensorApiService {
-  static const String _baseUrl = 'https://web-production-c4b70.up.railway.app/api';
+  static const String _baseUrl = 'https://cloud-dashboard-p24lcizz6-sobans-projects-af793893.vercel.app/api';
   static const String _sensorDataEndpoint = '/sensor-data';
   
   final http.Client _client;
