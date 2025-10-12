@@ -4,10 +4,16 @@ import '../../../../shared/widgets/metric_gauge.dart';
 import '../../../../services/sensor_api_service.dart';
 import '../../../../models/sensor_data.dart';
 import 'metric_detail_page.dart';
+import '../../../selection/presentation/pages/selection_page.dart';
 import 'dart:developer' as developer;
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final String systemType; // 'RIC' or 'SCC'
+  
+  const DashboardPage({
+    super.key,
+    this.systemType = 'RIC',
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -20,8 +26,48 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    developer.log('DashboardPage initialized');
-    _sensorDataStream = _apiService.getLatestSensorDataStream();
+    developer.log('DashboardPage initialized for ${widget.systemType}');
+    _sensorDataStream = widget.systemType == 'SCC' 
+        ? _apiService.getLatestSCCDataStream()
+        : _apiService.getLatestSensorDataStream();
+  }
+
+  void _navigateToSelection() {
+    try {
+      developer.log('Navigating back to System Selection');
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const SelectionPage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(-1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOutCubic;
+            
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+
+            var fadeAnimation = Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: const Interval(0.3, 1.0),
+            ));
+
+            return SlideTransition(
+              position: offsetAnimation,
+              child: FadeTransition(
+                opacity: fadeAnimation,
+                child: child,
+              ),
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+      );
+    } catch (error) {
+      developer.log('Error navigating to selection: $error');
+    }
   }
 
   void _navigateToMetricDetail(SensorMetric metric, double currentValue) {
@@ -31,6 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
           pageBuilder: (context, animation, secondaryAnimation) => MetricDetailPage(
             metric: metric,
             currentValue: currentValue,
+            systemType: widget.systemType,
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(1.0, 0.0);
@@ -210,13 +257,27 @@ class _DashboardPageState extends State<DashboardPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Dashboard',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => _navigateToSelection(),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          tooltip: 'Back to System Selection',
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${widget.systemType} Dashboard',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                     _buildPlantStatusIndicator(sensorData),
                   ],
@@ -234,8 +295,23 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildMetricsGrid(SensorData? sensorData, bool isLoading) {
-    // Define all metrics to display
-    final metrics = [
+    // Define metrics to display based on system type
+    final metrics = widget.systemType == 'SCC' ? [
+      SensorMetric.pressure,
+      SensorMetric.trh,
+      SensorMetric.trhOnLoad,
+      SensorMetric.i1,
+      SensorMetric.i2,
+      SensorMetric.i3,
+      SensorMetric.contMode,
+      SensorMetric.mh1,
+      SensorMetric.mh2,
+      SensorMetric.mh3,
+      SensorMetric.mh4,
+      SensorMetric.mh5,
+      SensorMetric.volts,
+      SensorMetric.power,
+    ] : [
       SensorMetric.oxygen,
       SensorMetric.oxyFlow,
       SensorMetric.oxyPressure,
@@ -334,6 +410,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   double _getMaxValueForMetric(SensorMetric metric) {
     switch (metric) {
+      // RIC metrics
       case SensorMetric.oxygen:
         return 100;
       case SensorMetric.oxyFlow:
@@ -356,11 +433,35 @@ class _DashboardPageState extends State<DashboardPage> {
       case SensorMetric.compOnStatus:
       case SensorMetric.boosterStatus:
         return 1;
+      
+      // SCC metrics
+      case SensorMetric.pressure:
+        return 200;
+      case SensorMetric.trh:
+      case SensorMetric.trhOnLoad:
+        return 30000;
+      case SensorMetric.i1:
+      case SensorMetric.i2:
+      case SensorMetric.i3:
+        return 1000;
+      case SensorMetric.contMode:
+        return 5;
+      case SensorMetric.mh1:
+      case SensorMetric.mh2:
+      case SensorMetric.mh3:
+      case SensorMetric.mh4:
+      case SensorMetric.mh5:
+        return 2000;
+      case SensorMetric.volts:
+        return 500;
+      case SensorMetric.power:
+        return 1000;
     }
   }
 
   Color _getColorForMetric(SensorMetric metric) {
     switch (metric) {
+      // RIC metrics
       case SensorMetric.oxygen:
         return const Color(0xFF10B981); // Green for oxygen purity
       case SensorMetric.oxyFlow:
@@ -387,6 +488,36 @@ class _DashboardPageState extends State<DashboardPage> {
         return const Color(0xFF22C55E); // Green for compressor status
       case SensorMetric.boosterStatus:
         return const Color(0xFF0EA5E9); // Sky for booster status
+      
+      // SCC metrics
+      case SensorMetric.pressure:
+        return const Color(0xFF8B5CF6); // Purple for pressure
+      case SensorMetric.trh:
+        return const Color(0xFF10B981); // Green for TRH
+      case SensorMetric.trhOnLoad:
+        return const Color(0xFF3B82F6); // Blue for TRH on load
+      case SensorMetric.i1:
+        return const Color(0xFFEF4444); // Red for I1
+      case SensorMetric.i2:
+        return const Color(0xFFEC4899); // Pink for I2
+      case SensorMetric.i3:
+        return const Color(0xFFF97316); // Orange for I3
+      case SensorMetric.contMode:
+        return const Color(0xFF84CC16); // Lime for control mode
+      case SensorMetric.mh1:
+        return const Color(0xFF06B6D4); // Cyan for MH1
+      case SensorMetric.mh2:
+        return const Color(0xFF64748B); // Slate for MH2
+      case SensorMetric.mh3:
+        return const Color(0xFF22C55E); // Green for MH3
+      case SensorMetric.mh4:
+        return const Color(0xFF0EA5E9); // Sky for MH4
+      case SensorMetric.mh5:
+        return const Color(0xFFF59E0B); // Amber for MH5
+      case SensorMetric.volts:
+        return const Color(0xFF6366F1); // Indigo for voltage
+      case SensorMetric.power:
+        return const Color(0xFFEF4444); // Red for power
     }
   }
 

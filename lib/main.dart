@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'dart:developer' as developer;
 import 'firebase_options.dart';
 import 'features/auth/presentation/pages/login_page.dart';
-import 'features/dashboard/presentation/pages/dashboard_page.dart';
+import 'features/selection/presentation/pages/selection_page.dart';
 import 'services/auth_service.dart';
 import 'services/sensor_api_service.dart';
 
@@ -136,7 +136,7 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          return const DashboardPage();
+          return const SelectionPage();
         }
 
         return const LoginPage();

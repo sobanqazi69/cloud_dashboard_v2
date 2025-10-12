@@ -10,11 +10,13 @@ import 'dart:developer' as developer;
 class MetricDetailPage extends StatefulWidget {
   final SensorMetric metric;
   final double currentValue;
+  final String systemType; // 'RIC' or 'SCC'
 
   const MetricDetailPage({
     super.key,
     required this.metric,
     required this.currentValue,
+    this.systemType = 'RIC',
   });
 
   @override
@@ -29,8 +31,10 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
   @override
   void initState() {
     super.initState();
-    developer.log('MetricDetailPage initialized for ${widget.metric.displayName}');
-    _historicalDataStream = _apiService.getHistoricalDataStream(hours: _selectedHours);
+    developer.log('MetricDetailPage initialized for ${widget.metric.displayName} (${widget.systemType})');
+    _historicalDataStream = widget.systemType == 'SCC' 
+        ? _apiService.getHistoricalSCCDataStream(hours: _selectedHours)
+        : _apiService.getHistoricalDataStream(hours: _selectedHours);
   }
 
 
@@ -525,6 +529,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
 
   Color _getColorForMetric(SensorMetric metric) {
     switch (metric) {
+      // RIC metrics
       case SensorMetric.oxygen:
         return const Color(0xFF10B981); // Green for oxygen purity
       case SensorMetric.oxyFlow:
@@ -551,6 +556,36 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
         return const Color(0xFF22C55E); // Green for compressor status
       case SensorMetric.boosterStatus:
         return const Color(0xFF0EA5E9); // Sky for booster status
+      
+      // SCC metrics
+      case SensorMetric.pressure:
+        return const Color(0xFF8B5CF6); // Purple for pressure
+      case SensorMetric.trh:
+        return const Color(0xFF10B981); // Green for TRH
+      case SensorMetric.trhOnLoad:
+        return const Color(0xFF3B82F6); // Blue for TRH on load
+      case SensorMetric.i1:
+        return const Color(0xFFEF4444); // Red for I1
+      case SensorMetric.i2:
+        return const Color(0xFFEC4899); // Pink for I2
+      case SensorMetric.i3:
+        return const Color(0xFFF97316); // Orange for I3
+      case SensorMetric.contMode:
+        return const Color(0xFF84CC16); // Lime for control mode
+      case SensorMetric.mh1:
+        return const Color(0xFF06B6D4); // Cyan for MH1
+      case SensorMetric.mh2:
+        return const Color(0xFF64748B); // Slate for MH2
+      case SensorMetric.mh3:
+        return const Color(0xFF22C55E); // Green for MH3
+      case SensorMetric.mh4:
+        return const Color(0xFF0EA5E9); // Sky for MH4
+      case SensorMetric.mh5:
+        return const Color(0xFFF59E0B); // Amber for MH5
+      case SensorMetric.volts:
+        return const Color(0xFF6366F1); // Indigo for voltage
+      case SensorMetric.power:
+        return const Color(0xFFEF4444); // Red for power
     }
   }
 
