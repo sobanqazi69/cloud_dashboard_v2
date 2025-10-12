@@ -34,6 +34,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
     try {
@@ -55,6 +56,18 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
               }
             },
           ),
+          actions: [
+            StreamBuilder<SensorData?>(
+              stream: _apiService.getLatestSensorDataStream(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return _buildPlantStatusIndicator(snapshot.data);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            const SizedBox(width: 16),
+          ],
         ),
         body: LayoutBuilder(
           builder: (context, constraints) {
@@ -433,6 +446,50 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
     );
   }
 
+
+  Widget _buildPlantStatusIndicator(SensorData? sensorData) {
+    try {
+      final isDeactivated = _apiService.isPlantDeactivated(sensorData);
+      
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDeactivated ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDeactivated ? Colors.red : Colors.green,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: isDeactivated ? Colors.red : Colors.green,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isDeactivated ? 'Deactivated' : 'Active',
+              style: TextStyle(
+                color: isDeactivated ? Colors.red : Colors.green,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      developer.log('Error building plant status indicator: $e');
+      return const SizedBox.shrink();
+    }
+  }
+
   Widget _buildLoadingWidget() {
     return Center(
       child: Column(
@@ -454,6 +511,12 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
           const Text(
             'Loading chart data...',
             style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'If no recent data is available, older records will be shown',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -493,7 +556,13 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
 
   @override
   void dispose() {
-    _apiService.dispose();
+    try {
+      developer.log('Disposing MetricDetailPage');
+      // Don't dispose the service here as it might be used by other widgets
+      // The service will be disposed when the app is closed
+    } catch (e) {
+      developer.log('Error disposing MetricDetailPage: $e');
+    }
     super.dispose();
   }
 }

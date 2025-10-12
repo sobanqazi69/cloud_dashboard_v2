@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/dashboard/presentation/pages/dashboard_page.dart';
 import 'services/auth_service.dart';
+import 'services/sensor_api_service.dart';
 
 void main() async {
   try {
@@ -45,8 +46,44 @@ void main() async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    try {
+      developer.log('App is being disposed, cleaning up services');
+      WidgetsBinding.instance.removeObserver(this);
+      SensorApiService.disposeInstance();
+    } catch (e) {
+      developer.log('Error disposing app: $e');
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.detached) {
+      try {
+        developer.log('App is being detached, disposing services');
+        SensorApiService.disposeInstance();
+      } catch (e) {
+        developer.log('Error disposing services on app detach: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

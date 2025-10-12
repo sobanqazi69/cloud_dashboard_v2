@@ -7,9 +7,18 @@ class SensorApiService {
   static const String _baseUrl = 'https://cloud-dashboard-p24lcizz6-sobans-projects-af793893.vercel.app/api';
   static const String _sensorDataEndpoint = '/sensor-data';
   
+  // Singleton instance
+  static SensorApiService? _instance;
   final http.Client _client;
+  bool _isDisposed = false;
 
-  SensorApiService({http.Client? client}) : _client = client ?? http.Client();
+  SensorApiService._({http.Client? client}) : _client = client ?? http.Client();
+
+  // Factory constructor for singleton
+  factory SensorApiService({http.Client? client}) {
+    _instance ??= SensorApiService._(client: client);
+    return _instance!;
+  }
 
   /// Fetches sensor data from the Railway API
   Future<SensorDataResponse> getSensorData({
@@ -17,6 +26,11 @@ class SensorApiService {
     int limit = 1000,
   }) async {
     try {
+      if (_isDisposed) {
+        developer.log('SensorApiService is disposed, cannot fetch data');
+        throw Exception('Service is disposed');
+      }
+      
       developer.log('Fetching sensor data from API - Page: $page, Limit: $limit');
       
       final uri = Uri.parse('$_baseUrl$_sensorDataEndpoint')
@@ -67,7 +81,36 @@ class SensorApiService {
     }
   }
 
+  /// Checks if the plant is deactivated based on the latest sensor data
+  /// Returns true if the latest value is more than 5 minutes old
+  bool isPlantDeactivated(SensorData? latestData) {
+    try {
+      if (latestData == null) {
+        developer.log('No sensor data available - plant considered deactivated');
+        return true;
+      }
+
+      final now = DateTime.now();
+      final dataTime = latestData.parsedTimestamp;
+      final timeDifference = now.difference(dataTime);
+      
+      final isDeactivated = timeDifference.inMinutes > 5;
+      
+      if (isDeactivated) {
+        developer.log('Plant is deactivated - latest data is ${timeDifference.inMinutes} minutes old');
+      } else {
+        developer.log('Plant is active - latest data is ${timeDifference.inMinutes} minutes old');
+      }
+      
+      return isDeactivated;
+    } catch (e) {
+      developer.log('Error checking plant deactivation status: $e');
+      return true; // Consider deactivated if there's an error
+    }
+  }
+
   /// Gets historical sensor data for a specific time range
+  /// If no data exists within the specified time range, returns older available data
   Future<List<SensorData>> getHistoricalData({
     int hours = 24,
     int maxRecords = 1000,
@@ -88,6 +131,20 @@ class SensorApiService {
         return dataTime.isAfter(cutoffTime);
       }).toList();
       
+      // If no data within the specified time range, return older available data
+      if (filteredData.isEmpty && response.data.isNotEmpty) {
+        developer.log('No data within $hours hours, showing older available data');
+        
+        // Take the most recent records available (up to 100 for performance)
+        final fallbackData = response.data.take(100).toList();
+        
+        // Sort by timestamp (oldest first for charting)
+        fallbackData.sort((a, b) => a.parsedTimestamp.compareTo(b.parsedTimestamp));
+        
+        developer.log('Showing ${fallbackData.length} older records as fallback');
+        return fallbackData;
+      }
+      
       // Sort by timestamp (oldest first for charting)
       filteredData.sort((a, b) => a.parsedTimestamp.compareTo(b.parsedTimestamp));
       
@@ -99,20 +156,58 @@ class SensorApiService {
     }
   }
 
+  /// Gets historical sensor data for a custom date range
+  Future<List<SensorData>> getHistoricalDataByDateRange({
+    required DateTime fromDate,
+    required DateTime toDate,
+    int maxRecords = 1000,
+  }) async {
+    try {
+      developer.log('Fetching historical data from ${fromDate.toIso8601String()} to ${toDate.toIso8601String()}');
+      
+      // Since the API returns data in reverse chronological order,
+      // we'll fetch more records and filter by date range
+      final response = await getSensorData(page: 1, limit: maxRecords);
+      
+      // Filter data within the specified date range
+      final filteredData = response.data.where((data) {
+        final dataTime = data.parsedTimestamp;
+        return dataTime.isAfter(fromDate) && dataTime.isBefore(toDate);
+      }).toList();
+      
+      // Sort by timestamp (oldest first for charting)
+      filteredData.sort((a, b) => a.parsedTimestamp.compareTo(b.parsedTimestamp));
+      
+      developer.log('Filtered ${filteredData.length} records within date range');
+      return filteredData;
+    } catch (e) {
+      developer.log('Error fetching historical data by date range: $e');
+      rethrow;
+    }
+  }
+
   /// Stream that periodically fetches the latest sensor data
   Stream<SensorData?> getLatestSensorDataStream({
     Duration interval = const Duration(seconds: 30),
   }) async* {
-    while (true) {
+    while (!_isDisposed) {
       try {
+        if (_isDisposed) break;
+        
         final latestData = await getLatestSensorData();
-        yield latestData;
+        if (!_isDisposed) {
+          yield latestData;
+        }
       } catch (e) {
-        developer.log('Error in sensor data stream: $e');
-        yield null;
+        if (!_isDisposed) {
+          developer.log('Error in sensor data stream: $e');
+          yield null;
+        }
       }
       
-      await Future.delayed(interval);
+      if (!_isDisposed) {
+        await Future.delayed(interval);
+      }
     }
   }
 
@@ -121,16 +216,54 @@ class SensorApiService {
     int hours = 24,
     Duration interval = const Duration(minutes: 1),
   }) async* {
-    while (true) {
+    while (!_isDisposed) {
       try {
+        if (_isDisposed) break;
+        
         final historicalData = await getHistoricalData(hours: hours);
-        yield historicalData;
+        if (!_isDisposed) {
+          yield historicalData;
+        }
       } catch (e) {
-        developer.log('Error in historical data stream: $e');
-        yield [];
+        if (!_isDisposed) {
+          developer.log('Error in historical data stream: $e');
+          yield [];
+        }
       }
       
-      await Future.delayed(interval);
+      if (!_isDisposed) {
+        await Future.delayed(interval);
+      }
+    }
+  }
+
+  /// Stream that fetches historical data for a custom date range
+  Stream<List<SensorData>> getHistoricalDataByDateRangeStream({
+    required DateTime fromDate,
+    required DateTime toDate,
+    Duration interval = const Duration(minutes: 1),
+  }) async* {
+    while (!_isDisposed) {
+      try {
+        if (_isDisposed) break;
+        
+        final historicalData = await getHistoricalDataByDateRange(
+          fromDate: fromDate,
+          toDate: toDate,
+        );
+        if (!_isDisposed) {
+          yield historicalData;
+        }
+      } catch (e) {
+        if (!_isDisposed) {
+          developer.log('Error in historical data by date range stream: $e');
+          yield [];
+        }
+      }
+      
+      if (!_isDisposed) {
+        await Future.delayed(interval);
+      }
     }
   }
 
@@ -153,7 +286,27 @@ class SensorApiService {
   }
 
   void dispose() {
-    _client.close();
+    try {
+      developer.log('Disposing SensorApiService');
+      _isDisposed = true;
+      _client.close();
+    } catch (e) {
+      developer.log('Error disposing SensorApiService: $e');
+    }
+  }
+
+  /// Static method to dispose the singleton instance
+  static void disposeInstance() {
+    try {
+      if (_instance != null) {
+        developer.log('Disposing SensorApiService singleton');
+        _instance!._isDisposed = true;
+        _instance!._client.close();
+        _instance = null;
+      }
+    } catch (e) {
+      developer.log('Error disposing SensorApiService singleton: $e');
+    }
   }
 }
 

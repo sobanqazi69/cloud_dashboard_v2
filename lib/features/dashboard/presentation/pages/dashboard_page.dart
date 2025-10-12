@@ -65,6 +65,81 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Widget _buildPlantStatusIndicator(SensorData? sensorData) {
+    try {
+      final isDeactivated = _apiService.isPlantDeactivated(sensorData);
+      
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDeactivated ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDeactivated ? Colors.red : Colors.green,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isDeactivated ? Colors.red : Colors.green,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              isDeactivated ? 'Plant Deactivated' : 'Plant Active',
+              style: TextStyle(
+                color: isDeactivated ? Colors.red : Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      developer.log('Error building plant status indicator: $e');
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.grey,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Status Unknown',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   Widget _buildShimmerGauge() {
     return Shimmer.fromColors(
       baseColor: const Color(0xFF1A1A1A),
@@ -132,13 +207,19 @@ class _DashboardPageState extends State<DashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Dashboard',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Dashboard',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    _buildPlantStatusIndicator(sensorData),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 Expanded(
@@ -311,7 +392,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
-    _apiService.dispose();
+    try {
+      developer.log('Disposing DashboardPage');
+      // Don't dispose the service here as it might be used by other widgets
+      // The service will be disposed when the app is closed
+    } catch (e) {
+      developer.log('Error disposing DashboardPage: $e');
+    }
     super.dispose();
   }
 } 
