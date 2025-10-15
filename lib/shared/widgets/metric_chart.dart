@@ -59,8 +59,11 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
   }
 
   List<MetricData> get _filteredData {
+    // First filter out zero values
+    final nonZeroData = widget.data.where((data) => data.value != 0.0).toList();
+    
     if (_customDateRange != null) {
-      return widget.data.where((data) =>
+      return nonZeroData.where((data) =>
           data.timestamp.isAfter(_customDateRange!.start) &&
           data.timestamp.isBefore(_customDateRange!.end)).toList();
     }
@@ -68,7 +71,7 @@ class _MetricChartState extends State<MetricChart> with TickerProviderStateMixin
     // Filter based on slider value
     final now = DateTime.now();
     final cutoff = now.subtract(Duration(hours: _timeRangeSliderValue.toInt()));
-    return widget.data.where((data) => data.timestamp.isAfter(cutoff)).toList();
+    return nonZeroData.where((data) => data.timestamp.isAfter(cutoff)).toList();
   }
 
   double _calculateActualMaxValue() {

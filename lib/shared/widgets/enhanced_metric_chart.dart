@@ -77,26 +77,34 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
 
   Color get _primaryColor => widget.primaryColor ?? const Color(0xFF00D2FF);
 
+  List<MetricData> get _filteredData {
+    // Filter out zero values
+    return widget.data.where((data) => data.value != 0.0).toList();
+  }
+
   double _calculateActualMaxValue() {
-    if (widget.data.isEmpty) return 100;
+    final data = _filteredData;
+    if (data.isEmpty) return 100;
     
     if (widget.maxValue == double.infinity) {
-      double maxInData = widget.data.fold(0.0, (max, item) => math.max(max, item.value));
+      double maxInData = data.fold(0.0, (max, item) => math.max(max, item.value));
       return maxInData * 1.1; // 10% padding
     }
     return widget.maxValue;
   }
 
   double _calculateActualMinValue() {
-    if (widget.data.isEmpty) return 0;
+    final data = _filteredData;
+    if (data.isEmpty) return 0;
     
-    double minInData = widget.data.fold(double.infinity, (min, item) => math.min(min, item.value));
+    double minInData = data.fold(double.infinity, (min, item) => math.min(min, item.value));
     return math.min(widget.minValue, minInData * 0.9); // 10% padding below
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.data.isEmpty) {
+    final data = _filteredData;
+    if (data.isEmpty) {
       return _buildEmptyChart();
     }
 
@@ -214,6 +222,7 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
   }
 
   Widget _buildChart() {
+    final data = _filteredData;
     final double effectiveMinValue = _calculateActualMinValue();
     final double effectiveMaxValue = _calculateActualMaxValue();
 
@@ -227,7 +236,7 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
               drawVerticalLine: true,
               drawHorizontalLine: true,
               horizontalInterval: (effectiveMaxValue - effectiveMinValue) / 5,
-              verticalInterval: widget.data.length > 10 ? widget.data.length / 8 : 1,
+              verticalInterval: data.length > 10 ? data.length / 8 : 1,
               getDrawingHorizontalLine: (value) => FlLine(
                 color: _primaryColor.withOpacity(0.1),
                 strokeWidth: 1,
@@ -248,7 +257,7 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
               ),
             ),
             minX: 0,
-            maxX: (widget.data.length - 1).toDouble(),
+            maxX: (data.length - 1).toDouble(),
             minY: effectiveMinValue,
             maxY: effectiveMaxValue,
             lineBarsData: [
@@ -300,9 +309,10 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
                 tooltipMargin: 8,
                 getTooltipColor: (touchedSpot) => _primaryColor.withOpacity(0.9),
                 getTooltipItems: (touchedSpots) {
+                  final data = _filteredData;
                   return touchedSpots.map((spot) {
-                    if (spot.x >= 0 && spot.x < widget.data.length) {
-                      final item = widget.data[spot.x.toInt()];
+                    if (spot.x >= 0 && spot.x < data.length) {
+                      final item = data[spot.x.toInt()];
                       return LineTooltipItem(
                         '${item.value.toStringAsFixed(2)} ${widget.unit ?? ''}\n${_formatDateTime(item.timestamp)}',
                         const TextStyle(
@@ -344,8 +354,9 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
   }
 
   List<FlSpot> _buildAnimatedSpots(double minValue) {
-    return List.generate(widget.data.length, (index) {
-      final actualValue = widget.data[index].value;
+    final data = _filteredData;
+    return List.generate(data.length, (index) {
+      final actualValue = data[index].value;
       final animatedValue = minValue + (actualValue - minValue) * _animation.value;
       return FlSpot(index.toDouble(), animatedValue);
     });
@@ -362,8 +373,9 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
           reservedSize: 35,
           interval: _calculateTimeInterval(),
           getTitlesWidget: (value, meta) {
-            if (value < 0 || value >= widget.data.length) return const SizedBox();
-            final date = widget.data[value.toInt()].timestamp;
+            final data = _filteredData;
+            if (value < 0 || value >= data.length) return const SizedBox();
+            final date = data[value.toInt()].timestamp;
             return Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
@@ -533,7 +545,8 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
   }
 
   Map<String, double> _calculateStats() {
-    if (widget.data.isEmpty) {
+    final data = _filteredData;
+    if (data.isEmpty) {
       return {
         'current': 0.0,
         'average': 0.0,
@@ -542,7 +555,7 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
       };
     }
 
-    final values = widget.data.map((e) => e.value).toList();
+    final values = data.map((e) => e.value).toList();
     return {
       'current': values.last,
       'average': values.reduce((a, b) => a + b) / values.length,
@@ -552,8 +565,9 @@ class _EnhancedMetricChartState extends State<EnhancedMetricChart>
   }
 
   double _calculateTimeInterval() {
-    if (widget.data.length <= 6) return 1;
-    return (widget.data.length / 6).ceil().toDouble();
+    final data = _filteredData;
+    if (data.length <= 6) return 1;
+    return (data.length / 6).ceil().toDouble();
   }
 
   String _formatDateTime(DateTime dateTime) {

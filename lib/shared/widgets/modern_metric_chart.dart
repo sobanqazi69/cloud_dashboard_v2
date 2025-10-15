@@ -63,16 +63,21 @@ class _ModernMetricChartState extends State<ModernMetricChart>
   List<MetricData> get _visibleData {
     if (widget.data.isEmpty) return [];
     
+    // First filter out zero values
+    final filteredData = widget.data.where((data) => data.value != 0.0).toList();
+    
+    if (filteredData.isEmpty) return [];
+    
     // Calculate how many data points to show based on zoom level
-    final pointsPerHour = widget.data.length / 24; // Assuming 24 hours of data
+    final pointsPerHour = filteredData.length / 24; // Assuming 24 hours of data
     final visiblePointCount = (pointsPerHour * _zoomLevel).round();
     
     // Ensure we don't exceed available data
-    final actualCount = math.min(visiblePointCount, widget.data.length);
-    final endIndex = math.min(_dataStartIndex + actualCount, widget.data.length);
+    final actualCount = math.min(visiblePointCount, filteredData.length);
+    final endIndex = math.min(_dataStartIndex + actualCount, filteredData.length);
     final startIndex = math.max(0, endIndex - actualCount);
     
-    return widget.data.sublist(startIndex, endIndex);
+    return filteredData.sublist(startIndex, endIndex);
   }
 
   double _calculateActualMaxValue() {
