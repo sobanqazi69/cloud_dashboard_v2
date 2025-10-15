@@ -62,7 +62,9 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
           ),
           actions: [
             StreamBuilder<SensorData?>(
-              stream: _apiService.getLatestSensorDataStream(),
+              stream: widget.systemType == 'SCC' 
+                  ? _apiService.getLatestSCCDataWithFallbackStream()
+                  : _apiService.getLatestSensorDataStream(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   return _buildPlantStatusIndicator(snapshot.data);
@@ -313,7 +315,9 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
                                 ],
                               ),
                               child: StreamBuilder<List<SensorData>>(
-                                stream: _apiService.getHistoricalDataStream(hours: 1),
+                                stream: widget.systemType == 'SCC' 
+                                    ? _apiService.getHistoricalSCCDataStream(hours: 1)
+                                    : _apiService.getHistoricalDataStream(hours: 1),
                                 builder: (context, snapshot) {
                                   return PaginatedDataList(
                                     data: snapshot.data ?? [],
@@ -561,9 +565,9 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
       case SensorMetric.pressure:
         return const Color(0xFF8B5CF6); // Purple for pressure
       case SensorMetric.trh:
-        return const Color(0xFF10B981); // Green for TRH
+        return const Color(0xFF10B981); // Green for Total Running Hours
       case SensorMetric.trhOnLoad:
-        return const Color(0xFF3B82F6); // Blue for TRH on load
+        return const Color(0xFF3B82F6); // Blue for Total Running Hours On Load
       case SensorMetric.i1:
         return const Color(0xFFEF4444); // Red for I1
       case SensorMetric.i2:
@@ -573,7 +577,7 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
       case SensorMetric.contMode:
         return const Color(0xFF84CC16); // Lime for control mode
       case SensorMetric.mh1:
-        return const Color(0xFF06B6D4); // Cyan for MH1
+        return const Color(0xFF06B6D4); // Cyan for Maintenance Hours
       case SensorMetric.mh2:
         return const Color(0xFF64748B); // Slate for MH2
       case SensorMetric.mh3:
@@ -586,6 +590,16 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
         return const Color(0xFF6366F1); // Indigo for voltage
       case SensorMetric.power:
         return const Color(0xFFEF4444); // Red for power
+      
+      // Additional merged SCC metrics
+      case SensorMetric.oxyPurity:
+        return const Color(0xFF10B981); // Green for oxygen purity
+      case SensorMetric.bedaPress:
+        return const Color(0xFF3B82F6); // Blue for bed A pressure
+      case SensorMetric.bedbPress:
+        return const Color(0xFF8B5CF6); // Purple for bed B pressure
+      case SensorMetric.recPress:
+        return const Color(0xFFF59E0B); // Amber for recovery pressure
     }
   }
 

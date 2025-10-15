@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/sensor_data.dart';
 
 class SensorApiService {
-  static const String _baseUrl = 'https://cloud-dashboard-2c643k1lf-sobans-projects-af793893.vercel.app/api';
+  static const String _baseUrl = 'https://cloud-dashboard-drlayg138-sobans-projects-af793893.vercel.app/api';
   static const String _sensorDataEndpoint = '/sensor-data';
   static const String _sccEndpoint = '/scc/all';
   
@@ -165,6 +165,105 @@ class SensorApiService {
     }
   }
 
+  /// Gets the latest non-null value for a specific metric by checking previous records
+  Future<double?> getLatestNonNullValueForMetric(SensorMetric metric, {int maxRecords = 50}) async {
+    try {
+      developer.log('Looking for latest non-null value for metric: ${metric.key}');
+      
+      final response = await getSensorData(page: 1, limit: maxRecords);
+      
+      for (final data in response.data) {
+        final value = metric.getValue(data);
+        final hasData = _hasMetricData(metric, data);
+        
+        if (hasData && value != 0.0) {
+          developer.log('Found non-null value for ${metric.key}: $value');
+          return value;
+        }
+      }
+      
+      developer.log('No non-null value found for ${metric.key} in $maxRecords records');
+      return null;
+    } catch (e) {
+      developer.log('Error getting latest non-null value for ${metric.key}: $e');
+      return null;
+    }
+  }
+
+  /// Gets the latest non-null value for a specific SCC metric by checking previous records
+  Future<double?> getLatestNonNullSCCValueForMetric(SensorMetric metric, {int maxRecords = 50}) async {
+    try {
+      developer.log('Looking for latest non-null SCC value for metric: ${metric.key}');
+      
+      final response = await getSCCData(page: 1, limit: maxRecords);
+      
+      for (final data in response.data) {
+        final value = metric.getValue(data);
+        final hasData = _hasMetricData(metric, data);
+        
+        if (hasData && value != 0.0) {
+          developer.log('Found non-null SCC value for ${metric.key}: $value');
+          return value;
+        }
+      }
+      
+      developer.log('No non-null SCC value found for ${metric.key} in $maxRecords records');
+      return null;
+    } catch (e) {
+      developer.log('Error getting latest non-null SCC value for ${metric.key}: $e');
+      return null;
+    }
+  }
+
+  /// Helper method to check if a metric has data in a sensor data record
+  bool _hasMetricData(SensorMetric metric, SensorData data) {
+    try {
+      switch (metric) {
+        case SensorMetric.pressure:
+          return data.pressure != null;
+        case SensorMetric.trh:
+          return data.trh != null;
+        case SensorMetric.trhOnLoad:
+          return data.trhOnLoad != null;
+        case SensorMetric.i1:
+          return data.i1 != null;
+        case SensorMetric.i2:
+          return data.i2 != null;
+        case SensorMetric.i3:
+          return data.i3 != null;
+        case SensorMetric.contMode:
+          return data.contMode != null;
+        case SensorMetric.mh1:
+          return data.mh1 != null;
+        case SensorMetric.mh2:
+          return data.mh2 != null;
+        case SensorMetric.mh3:
+          return data.mh3 != null;
+        case SensorMetric.mh4:
+          return data.mh4 != null;
+        case SensorMetric.mh5:
+          return data.mh5 != null;
+        case SensorMetric.volts:
+          return data.volts != null;
+        case SensorMetric.power:
+          return data.power != null;
+        case SensorMetric.oxyPurity:
+          return data.oxyPurity != null;
+        case SensorMetric.bedaPress:
+          return data.bedaPress != null;
+        case SensorMetric.bedbPress:
+          return data.bedbPress != null;
+        case SensorMetric.recPress:
+          return data.recPress != null;
+        default:
+          return true;
+      }
+    } catch (e) {
+      developer.log('Error checking metric data for ${metric.key}: $e');
+      return false;
+    }
+  }
+
   /// Gets the latest SCC data (first record from the API)
   Future<SensorData?> getLatestSCCData() async {
     try {
@@ -173,6 +272,89 @@ class SensorApiService {
     } catch (e) {
       developer.log('Error fetching latest SCC data: $e');
       rethrow;
+    }
+  }
+
+  /// Gets the latest SCC data with fallback values for null metrics
+  Future<SensorData?> getLatestSCCDataWithFallback() async {
+    try {
+      final latestData = await getLatestSCCData();
+      if (latestData == null) return null;
+
+      // Create a map to store fallback values for null metrics
+      final Map<String, double?> fallbackValues = {};
+
+      // Define SCC metrics to check for fallback values (only the ones we want to display)
+      final sccMetrics = [
+        SensorMetric.pressure,
+        SensorMetric.trh,
+        SensorMetric.trhOnLoad,
+        SensorMetric.i1,
+        SensorMetric.mh1,
+        SensorMetric.volts,
+        SensorMetric.power,
+        SensorMetric.oxyPurity,
+        SensorMetric.bedaPress,
+        SensorMetric.bedbPress,
+        SensorMetric.recPress,
+      ];
+
+      // Check each metric for fallback values
+      for (final metric in sccMetrics) {
+        if (!_hasMetricData(metric, latestData)) {
+          final fallbackValue = await getLatestNonNullSCCValueForMetric(metric);
+          if (fallbackValue != null) {
+            fallbackValues[metric.key] = fallbackValue;
+            developer.log('Using fallback value for ${metric.key}: $fallbackValue');
+          }
+        }
+      }
+
+      // If no fallback values are needed, return the original data
+      if (fallbackValues.isEmpty) {
+        return latestData;
+      }
+
+      // Create a new SensorData object with fallback values
+      return SensorData(
+        airiTemp: latestData.airiTemp,
+        airoTemp: latestData.airoTemp,
+        boosterStatus: latestData.boosterStatus,
+        boostoTemp: latestData.boostoTemp,
+        compOnStatus: latestData.compOnStatus,
+        drypdpTemp: latestData.drypdpTemp,
+        oxygen: latestData.oxygen,
+        airOutletp: latestData.airOutletp,
+        boosterHour: latestData.boosterHour,
+        compLoad: latestData.compLoad,
+        compRunningHour: latestData.compRunningHour,
+        oxyFlow: latestData.oxyFlow,
+        oxyPressure: latestData.oxyPressure,
+        pressure: fallbackValues['pressure'] ?? latestData.pressure,
+        trh: fallbackValues['trh'] ?? latestData.trh,
+        trhOnLoad: fallbackValues['trh_on_load'] ?? latestData.trhOnLoad,
+        i1: fallbackValues['i1'] ?? latestData.i1,
+        i2: fallbackValues['i2'] ?? latestData.i2,
+        i3: fallbackValues['i3'] ?? latestData.i3,
+        contMode: fallbackValues['cont_mode']?.round() ?? latestData.contMode,
+        mh1: fallbackValues['mh_1'] ?? latestData.mh1,
+        mh2: fallbackValues['mh_2'] ?? latestData.mh2,
+        mh3: fallbackValues['mh_3'] ?? latestData.mh3,
+        mh4: fallbackValues['mh_4'] ?? latestData.mh4,
+        mh5: fallbackValues['mh_5'] ?? latestData.mh5,
+        volts: fallbackValues['volts'] ?? latestData.volts,
+        power: fallbackValues['power'] ?? latestData.power,
+        tableSource: latestData.tableSource,
+        oxyPurity: fallbackValues['oxy_purity'] ?? latestData.oxyPurity,
+        bedaPress: fallbackValues['beda_press'] ?? latestData.bedaPress,
+        bedbPress: fallbackValues['bedb_press'] ?? latestData.bedbPress,
+        recPress: fallbackValues['rec_press'] ?? latestData.recPress,
+        timestamp: latestData.timestamp,
+        id: latestData.id,
+      );
+    } catch (e) {
+      developer.log('Error getting SCC data with fallback: $e');
+      return await getLatestSCCData(); // Fallback to regular method
     }
   }
 
@@ -368,6 +550,31 @@ class SensorApiService {
       } catch (e) {
         if (!_isDisposed) {
           developer.log('Error in SCC data stream: $e');
+          yield null;
+        }
+      }
+      
+      if (!_isDisposed) {
+        await Future.delayed(interval);
+      }
+    }
+  }
+
+  /// Stream that periodically fetches the latest SCC data with fallback values
+  Stream<SensorData?> getLatestSCCDataWithFallbackStream({
+    Duration interval = const Duration(seconds: 30),
+  }) async* {
+    while (!_isDisposed) {
+      try {
+        if (_isDisposed) break;
+        
+        final latestData = await getLatestSCCDataWithFallback();
+        if (!_isDisposed) {
+          yield latestData;
+        }
+      } catch (e) {
+        if (!_isDisposed) {
+          developer.log('Error in SCC data with fallback stream: $e');
           yield null;
         }
       }

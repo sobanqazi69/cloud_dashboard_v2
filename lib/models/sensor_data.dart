@@ -67,7 +67,17 @@ class SensorData {
   @JsonKey(name: 'table_source')
   final String? tableSource;
   
-  final String timestamp;
+  // Additional merged fields from cloud_table
+  @JsonKey(name: 'oxy_purity')
+  final double? oxyPurity;
+  @JsonKey(name: 'beda_press')
+  final double? bedaPress;
+  @JsonKey(name: 'bedb_press')
+  final double? bedbPress;
+  @JsonKey(name: 'rec_press')
+  final double? recPress;
+  
+  final String? timestamp;
   final int id;
 
   const SensorData({
@@ -99,7 +109,11 @@ class SensorData {
     this.volts,
     this.power,
     this.tableSource,
-    required this.timestamp,
+    this.oxyPurity,
+    this.bedaPress,
+    this.bedbPress,
+    this.recPress,
+    this.timestamp,
     required this.id,
   });
 
@@ -108,7 +122,10 @@ class SensorData {
 
   DateTime get parsedTimestamp {
     try {
-      return DateTime.parse(timestamp);
+      if (timestamp == null || timestamp!.isEmpty) {
+        return DateTime.now();
+      }
+      return DateTime.parse(timestamp!);
     } catch (e) {
       return DateTime.now();
     }
@@ -205,19 +222,25 @@ enum SensorMetric {
   
   // SCC metrics
   pressure('pressure', 'Pressure', 'Bar'),
-  trh('trh', 'TRH', ''),
-  trhOnLoad('trh_on_load', 'TRH On Load', ''),
-  i1('i1', 'Current I1', 'A'),
+  trh('trh', 'Total Running Hours', 'hrs'),
+  trhOnLoad('trh_on_load', 'Total Running Hours On Load', 'hrs'),
+  i1('i1', 'I1', 'A'),
   i2('i2', 'Current I2', 'A'),
   i3('i3', 'Current I3', 'A'),
   contMode('cont_mode', 'Control Mode', ''),
-  mh1('mh_1', 'MH 1', ''),
+  mh1('mh_1', 'Maintenance Hours', 'hrs'),
   mh2('mh_2', 'MH 2', ''),
   mh3('mh_3', 'MH 3', ''),
   mh4('mh_4', 'MH 4', ''),
   mh5('mh_5', 'MH 5', ''),
   volts('volts', 'Voltage', 'V'),
-  power('power', 'Power', 'W');
+  power('power', 'Power', 'KW'),
+  
+  // Additional merged SCC metrics
+  oxyPurity('oxy_purity', 'Oxygen Purity', '%'),
+  bedaPress('beda_press', 'Bed A Pressure', 'Bar'),
+  bedbPress('bedb_press', 'Bed B Pressure', 'Bar'),
+  recPress('rec_press', 'Recovery Pressure', 'Bar');
 
   const SensorMetric(this.key, this.displayName, this.unit);
 
@@ -285,6 +308,16 @@ enum SensorMetric {
           return data.volts ?? 0.0;
         case SensorMetric.power:
           return data.power ?? 0.0;
+        
+        // Additional merged SCC metrics
+        case SensorMetric.oxyPurity:
+          return data.oxyPurity ?? 0.0;
+        case SensorMetric.bedaPress:
+          return data.bedaPress ?? 0.0;
+        case SensorMetric.bedbPress:
+          return data.bedbPress ?? 0.0;
+        case SensorMetric.recPress:
+          return data.recPress ?? 0.0;
       }
     } catch (e) {
       return 0.0;

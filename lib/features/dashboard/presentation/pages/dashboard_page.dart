@@ -28,7 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     developer.log('DashboardPage initialized for ${widget.systemType}');
     _sensorDataStream = widget.systemType == 'SCC' 
-        ? _apiService.getLatestSCCDataStream()
+        ? _apiService.getLatestSCCDataWithFallbackStream()
         : _apiService.getLatestSensorDataStream();
   }
 
@@ -187,6 +187,121 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  List<SensorMetric> _getPrioritizedSCCMetrics(List<SensorMetric> allMetrics, SensorData sensorData) {
+    try {
+      // Get all metrics that have meaningful data (not null and not 0)
+      final metricsWithData = allMetrics.where((metric) {
+        final value = metric.getValue(sensorData);
+        final hasData = _hasMetricData(metric, sensorData);
+        // Show metric if it has data AND the value is not 0
+        return hasData && value != 0.0;
+      }).toList();
+
+      developer.log('Found ${metricsWithData.length} metrics with meaningful data (not null and not 0)');
+      developer.log('Metrics with data: ${metricsWithData.map((m) => m.key).join(', ')}');
+      
+      return metricsWithData;
+    } catch (e) {
+      developer.log('Error prioritizing SCC metrics: $e');
+      return allMetrics;
+    }
+  }
+
+  bool _hasMetricData(SensorMetric metric, SensorData sensorData) {
+    try {
+      switch (metric) {
+        case SensorMetric.pressure:
+          return sensorData.pressure != null;
+        case SensorMetric.trh:
+          return sensorData.trh != null;
+        case SensorMetric.trhOnLoad:
+          return sensorData.trhOnLoad != null;
+        case SensorMetric.i1:
+          return sensorData.i1 != null;
+        case SensorMetric.i2:
+          return sensorData.i2 != null;
+        case SensorMetric.i3:
+          return sensorData.i3 != null;
+        case SensorMetric.contMode:
+          return sensorData.contMode != null;
+        case SensorMetric.mh1:
+          return sensorData.mh1 != null;
+        case SensorMetric.mh2:
+          return sensorData.mh2 != null;
+        case SensorMetric.mh3:
+          return sensorData.mh3 != null;
+        case SensorMetric.mh4:
+          return sensorData.mh4 != null;
+        case SensorMetric.mh5:
+          return sensorData.mh5 != null;
+        case SensorMetric.volts:
+          return sensorData.volts != null;
+        case SensorMetric.power:
+          return sensorData.power != null;
+        case SensorMetric.oxyPurity:
+          return sensorData.oxyPurity != null;
+        case SensorMetric.bedaPress:
+          return sensorData.bedaPress != null;
+        case SensorMetric.bedbPress:
+          return sensorData.bedbPress != null;
+        case SensorMetric.recPress:
+          return sensorData.recPress != null;
+        default:
+          return true;
+      }
+    } catch (e) {
+      developer.log('Error checking metric data for ${metric.key}: $e');
+      return false;
+    }
+  }
+
+  Widget _buildNoDataGauge(SensorMetric metric, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          metric.displayName,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.signal_cellular_off,
+                  color: color.withOpacity(0.3),
+                  size: 32,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No Data',
+                  style: TextStyle(
+                    color: color.withOpacity(0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  metric.unit,
+                  style: TextStyle(
+                    color: color.withOpacity(0.3),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildShimmerGauge() {
     return Shimmer.fromColors(
       baseColor: const Color(0xFF1A1A1A),
@@ -270,7 +385,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '${widget.systemType} Dashboard',
+                          '${(widget.systemType == 'SCC' ? 'Bahawalpur Site\nModbus' : 'RIC\nAnalog')} ',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -295,22 +410,19 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildMetricsGrid(SensorData? sensorData, bool isLoading) {
-    // Define metrics to display based on system type
-    final metrics = widget.systemType == 'SCC' ? [
+    // Define all available metrics based on system type
+    final allMetrics = widget.systemType == 'SCC' ? [
       SensorMetric.pressure,
       SensorMetric.trh,
       SensorMetric.trhOnLoad,
       SensorMetric.i1,
-      SensorMetric.i2,
-      SensorMetric.i3,
-      SensorMetric.contMode,
       SensorMetric.mh1,
-      SensorMetric.mh2,
-      SensorMetric.mh3,
-      SensorMetric.mh4,
-      SensorMetric.mh5,
       SensorMetric.volts,
       SensorMetric.power,
+      SensorMetric.oxyPurity,
+      SensorMetric.bedaPress,
+      SensorMetric.bedbPress,
+      SensorMetric.recPress,
     ] : [
       SensorMetric.oxygen,
       SensorMetric.oxyFlow,
@@ -326,6 +438,11 @@ class _DashboardPageState extends State<DashboardPage> {
       SensorMetric.compOnStatus,
       SensorMetric.boosterStatus,
     ];
+
+    // For SCC system, prioritize metrics with data but still show some null metrics
+    final metrics = widget.systemType == 'SCC' && sensorData != null
+        ? _getPrioritizedSCCMetrics(allMetrics, sensorData)
+        : allMetrics;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -366,19 +483,20 @@ class _DashboardPageState extends State<DashboardPage> {
             final value = metric.getValue(sensorData);
             final maxValue = _getMaxValueForMetric(metric);
             final color = _getColorForMetric(metric);
+            final hasData = _hasMetricData(metric, sensorData);
 
             return Hero(
               tag: 'metric-${metric.key}',
               child: Material(
                 type: MaterialType.transparency,
                 child: GestureDetector(
-                  onTap: () => _navigateToMetricDetail(metric, value),
+                  onTap: hasData ? () => _navigateToMetricDetail(metric, value) : null,
                   child: Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFF1A1A1A),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: hasData ? Colors.grey.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -390,13 +508,15 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: MetricGauge(
-                        title: metric.displayName,
-                        value: value,
-                        unit: metric.unit,
-                        maxValue: maxValue,
-                        color: color,
-                      ),
+                      child: hasData 
+                          ? MetricGauge(
+                              title: metric.displayName,
+                              value: value,
+                              unit: metric.unit,
+                              maxValue: maxValue,
+                              color: color,
+                            )
+                          : _buildNoDataGauge(metric, color),
                     ),
                   ),
                 ),
@@ -441,12 +561,14 @@ class _DashboardPageState extends State<DashboardPage> {
       case SensorMetric.trhOnLoad:
         return 30000;
       case SensorMetric.i1:
+        return 1000;
       case SensorMetric.i2:
       case SensorMetric.i3:
         return 1000;
       case SensorMetric.contMode:
         return 5;
       case SensorMetric.mh1:
+        return 2000;
       case SensorMetric.mh2:
       case SensorMetric.mh3:
       case SensorMetric.mh4:
@@ -456,6 +578,14 @@ class _DashboardPageState extends State<DashboardPage> {
         return 500;
       case SensorMetric.power:
         return 1000;
+      
+      // Additional merged SCC metrics
+      case SensorMetric.oxyPurity:
+        return 100;
+      case SensorMetric.bedaPress:
+      case SensorMetric.bedbPress:
+      case SensorMetric.recPress:
+        return 100;
     }
   }
 
@@ -493,9 +623,9 @@ class _DashboardPageState extends State<DashboardPage> {
       case SensorMetric.pressure:
         return const Color(0xFF8B5CF6); // Purple for pressure
       case SensorMetric.trh:
-        return const Color(0xFF10B981); // Green for TRH
+        return const Color(0xFF10B981); // Green for Total Running Hours
       case SensorMetric.trhOnLoad:
-        return const Color(0xFF3B82F6); // Blue for TRH on load
+        return const Color(0xFF3B82F6); // Blue for Total Running Hours On Load
       case SensorMetric.i1:
         return const Color(0xFFEF4444); // Red for I1
       case SensorMetric.i2:
@@ -505,7 +635,7 @@ class _DashboardPageState extends State<DashboardPage> {
       case SensorMetric.contMode:
         return const Color(0xFF84CC16); // Lime for control mode
       case SensorMetric.mh1:
-        return const Color(0xFF06B6D4); // Cyan for MH1
+        return const Color(0xFF06B6D4); // Cyan for Maintenance Hours
       case SensorMetric.mh2:
         return const Color(0xFF64748B); // Slate for MH2
       case SensorMetric.mh3:
@@ -518,6 +648,16 @@ class _DashboardPageState extends State<DashboardPage> {
         return const Color(0xFF6366F1); // Indigo for voltage
       case SensorMetric.power:
         return const Color(0xFFEF4444); // Red for power
+      
+      // Additional merged SCC metrics
+      case SensorMetric.oxyPurity:
+        return const Color(0xFF10B981); // Green for oxygen purity
+      case SensorMetric.bedaPress:
+        return const Color(0xFF3B82F6); // Blue for bed A pressure
+      case SensorMetric.bedbPress:
+        return const Color(0xFF8B5CF6); // Purple for bed B pressure
+      case SensorMetric.recPress:
+        return const Color(0xFFF59E0B); // Amber for recovery pressure
     }
   }
 

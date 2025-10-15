@@ -35,7 +35,11 @@ SensorData _$SensorDataFromJson(Map<String, dynamic> json) => SensorData(
   volts: (json['volts'] as num?)?.toDouble(),
   power: (json['power'] as num?)?.toDouble(),
   tableSource: json['table_source'] as String?,
-  timestamp: json['timestamp'] as String,
+  oxyPurity: (json['oxy_purity'] as num?)?.toDouble(),
+  bedaPress: (json['beda_press'] as num?)?.toDouble(),
+  bedbPress: (json['bedb_press'] as num?)?.toDouble(),
+  recPress: (json['rec_press'] as num?)?.toDouble(),
+  timestamp: json['timestamp'] as String?,
   id: (json['id'] as num).toInt(),
 );
 
@@ -69,6 +73,10 @@ Map<String, dynamic> _$SensorDataToJson(SensorData instance) =>
       'volts': instance.volts,
       'power': instance.power,
       'table_source': instance.tableSource,
+      'oxy_purity': instance.oxyPurity,
+      'beda_press': instance.bedaPress,
+      'bedb_press': instance.bedbPress,
+      'rec_press': instance.recPress,
       'timestamp': instance.timestamp,
       'id': instance.id,
     };

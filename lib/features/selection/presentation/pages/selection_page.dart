@@ -52,7 +52,7 @@ class SelectionPage extends StatelessWidget {
                   _buildSystemButton(
                     context: context,
                     title: 'RIC',
-                    subtitle: 'Remote Industrial Control',
+                    subtitle: 'Analog',
                     icon: Icons.engineering,
                     color: const Color(0xFF4169E1),
                     onTap: () => _navigateToRIC(context),
@@ -63,8 +63,8 @@ class SelectionPage extends StatelessWidget {
                   // SCC Button
                   _buildSystemButton(
                     context: context,
-                    title: 'SCC',
-                    subtitle: 'System Control Center',
+                    title: 'Bahawalpur Site',
+                    subtitle: 'Modbus',
                     icon: Icons.control_camera,
                     color: const Color(0xFF10B981),
                     onTap: () => _navigateToSCC(context),
