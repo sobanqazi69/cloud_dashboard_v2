@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/sensor_data.dart';
 
 class SensorApiService {
-  static const String _baseUrl = 'https://cloud-dashboard-drlayg138-sobans-projects-af793893.vercel.app/api';
+  static const String _baseUrl = 'https://cloud-dashboard-git-main-sobans-projects-af793893.vercel.app/api';
   static const String _sensorDataEndpoint = '/sensor-data';
   static const String _sccEndpoint = '/scc/all';
   

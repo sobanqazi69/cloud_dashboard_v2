@@ -221,7 +221,7 @@ enum SensorMetric {
   oxyPressure('oxy_pressure', 'Oxygen Pressure', 'Bar'),
   
   // SCC metrics
-  pressure('pressure', 'Pressure', 'Bar'),
+  pressure('pressure', 'Pressure', 'PSI'),
   trh('trh', 'Total Running Hours', 'hrs'),
   trhOnLoad('trh_on_load', 'Total Running Hours On Load', 'hrs'),
   i1('i1', 'I1', 'A'),
@@ -240,7 +240,7 @@ enum SensorMetric {
   oxyPurity('oxy_purity', 'Oxygen Purity', '%'),
   bedaPress('beda_press', 'Bed A Pressure', 'Bar'),
   bedbPress('bedb_press', 'Bed B Pressure', 'Bar'),
-  recPress('rec_press', 'Recovery Pressure', 'Bar');
+  recPress('rec_press', 'Reciever Pressure', 'Bar');
 
   const SensorMetric(this.key, this.displayName, this.unit);
 
