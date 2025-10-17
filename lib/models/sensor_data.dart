@@ -224,7 +224,7 @@ enum SensorMetric {
   pressure('pressure', 'Pressure', 'PSI'),
   trh('trh', 'Total Running Hours', 'hrs'),
   trhOnLoad('trh_on_load', 'Total Running Hours On Load', 'hrs'),
-  i1('i1', 'I1', 'A'),
+  i1('i1', 'Current', 'A'),
   i2('i2', 'Current I2', 'A'),
   i3('i3', 'Current I3', 'A'),
   contMode('cont_mode', 'Control Mode', ''),
@@ -238,9 +238,9 @@ enum SensorMetric {
   
   // Additional merged SCC metrics
   oxyPurity('oxy_purity', 'Oxygen Purity', '%'),
-  bedaPress('beda_press', 'Bed A Pressure', 'Bar'),
-  bedbPress('bedb_press', 'Bed B Pressure', 'Bar'),
-  recPress('rec_press', 'Reciever Pressure', 'Bar');
+  bedaPress('beda_press', 'Bed A Pressure', 'PSI'),
+  bedbPress('bedb_press', 'Bed B Pressure', 'PSI'),
+  recPress('rec_press', 'Reciever Pressure', 'PSI');
 
   const SensorMetric(this.key, this.displayName, this.unit);
 
