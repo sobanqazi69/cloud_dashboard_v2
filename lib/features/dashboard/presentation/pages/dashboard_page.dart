@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../shared/widgets/metric_gauge.dart';
 import '../../../../services/sensor_api_service.dart';
 import '../../../../models/sensor_data.dart';
@@ -22,14 +23,42 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final SensorApiService _apiService = SensorApiService();
   late Stream<SensorData?> _sensorDataStream;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     developer.log('DashboardPage initialized for ${widget.systemType}');
-    _sensorDataStream = widget.systemType == 'SCC' 
+    _sensorDataStream = widget.systemType == 'SCC'
         ? _apiService.getLatestSCCDataWithFallbackStream()
         : _apiService.getLatestSensorDataStream();
+  }
+
+  void _scrollDown() {
+    if (_scrollController.hasClients) {
+      final double currentPosition = _scrollController.position.pixels;
+      final double maxScroll = _scrollController.position.maxScrollExtent;
+      final double targetPosition = (currentPosition + 200).clamp(0.0, maxScroll);
+
+      _scrollController.animateTo(
+        targetPosition,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _scrollUp() {
+    if (_scrollController.hasClients) {
+      final double currentPosition = _scrollController.position.pixels;
+      final double targetPosition = (currentPosition - 200).clamp(0.0, _scrollController.position.maxScrollExtent);
+
+      _scrollController.animateTo(
+        targetPosition,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void _navigateToSelection() {
@@ -83,7 +112,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const begin = Offset(1.0, 0.0);
             const end = Offset.zero;
             const curve = Curves.easeInOutCubic;
-            
+
             var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
             var offsetAnimation = animation.drive(tween);
 
@@ -109,6 +138,17 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     } catch (error) {
       developer.log('Error navigating to metric detail: $error');
+    }
+  }
+
+  Future<void> _launchTroubleshooter() async {
+    final Uri url = Uri.parse('https://www.psatroubleshooter.com/');
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        developer.log('Could not launch $url');
+      }
+    } catch (error) {
+      developer.log('Error launching troubleshooter: $error');
     }
   }
 
@@ -187,6 +227,42 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Widget _buildTroubleshootButton() {
+    return InkWell(
+      onTap: _launchTroubleshooter,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3B82F6).withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFF3B82F6).withOpacity(0.5),
+            width: 0.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.build_circle,
+              color: Color(0xFF3B82F6),
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'Troubleshoot',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   bool _hasMetricData(SensorMetric metric, SensorData sensorData) {
     try {
@@ -368,22 +444,31 @@ class _DashboardPageState extends State<DashboardPage> {
                           icon: const Icon(
                             Icons.arrow_back,
                             color: Colors.white,
-                            size: 24,
+                            size: 18,
                           ),
                           tooltip: 'Back to System Selection',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '${(widget.systemType == 'SCC' ? 'Bahawalpur Site\nModbus' : 'RIC\nAnalog')} ',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
                           ),
                         ),
                       ],
                     ),
-                    _buildPlantStatusIndicator(sensorData),
+                    Row(
+                      children: [
+                        _buildPlantStatusIndicator(sensorData),
+                        const SizedBox(width: 8),
+                        _buildTroubleshootButton(),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -426,7 +511,7 @@ class _DashboardPageState extends State<DashboardPage> {
         // Determine grid layout based on screen size
         int crossAxisCount;
         double childAspectRatio;
-        
+
         if (constraints.maxWidth < 600) {
           crossAxisCount = 2;
           childAspectRatio = 1.0;
@@ -441,101 +526,174 @@ class _DashboardPageState extends State<DashboardPage> {
           childAspectRatio = 1.3;
         }
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(8),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: childAspectRatio,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          itemCount: allMetrics.length,
-          itemBuilder: (context, index) {
-            final metric = allMetrics[index];
-            
-            if (isLoading || sensorData == null) {
-              return _buildShimmerGauge();
-            }
+        return Stack(
+          children: [
+            GridView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(8),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: allMetrics.length,
+              itemBuilder: (context, index) {
+                final metric = allMetrics[index];
 
-            final value = metric.getValue(sensorData);
-            final maxValue = _getMaxValueForMetric(metric);
-            final color = _getColorForMetric(metric);
-            final hasData = _hasMetricData(metric, sensorData);
+                if (isLoading || sensorData == null) {
+                  return _buildShimmerGauge();
+                }
 
-            return Hero(
-              tag: 'metric-${metric.key}',
-              child: Material(
-                type: MaterialType.transparency,
-                child: GestureDetector(
-                  onTap: hasData ? () => _navigateToMetricDetail(metric, value) : null,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: hasData ? Colors.grey.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                final value = metric.getValue(sensorData);
+                final maxValue = _getMaxValueForMetric(metric);
+                final color = _getColorForMetric(metric);
+                final hasData = _hasMetricData(metric, sensorData);
+
+                return Hero(
+                  tag: 'metric-${metric.key}',
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: GestureDetector(
+                      onTap: hasData ? () => _navigateToMetricDetail(metric, value) : null,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: hasData ? Colors.grey.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: hasData 
-                          ? MetricGauge(
-                              title: metric.displayName,
-                              value: value,
-                              unit: metric.unit,
-                              maxValue: maxValue,
-                              color: color,
-                            )
-                          : _buildNoDataGauge(metric, color),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: hasData
+                              ? MetricGauge(
+                                  title: metric.displayName,
+                                  value: value,
+                                  unit: metric.unit,
+                                  maxValue: maxValue,
+                                  color: color,
+                                )
+                              : _buildNoDataGauge(metric, color),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                );
+              },
+            ),
+            // Scroll buttons
+            Positioned(
+              right: 16,
+              top: 0,
+              bottom: 0,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildScrollButton(Icons.keyboard_arrow_up, _scrollUp),
+                  const SizedBox(height: 8),
+                  _buildScrollButton(Icons.keyboard_arrow_down, _scrollDown),
+                ],
               ),
-            );
-          },
+            ),
+          ],
         );
       },
     );
   }
 
   Widget _buildSCCSections(SensorData? sensorData, bool isLoading) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Compressor's Parameters Section
-          _buildSectionHeader('Compressor\'s Parameters'),
-          const SizedBox(height: 16),
-          _buildCompressorMetricsGrid(sensorData, isLoading),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          controller: _scrollController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Compressor's Parameters Section
+              _buildSectionHeader('Compressor\'s Parameters'),
+              const SizedBox(height: 16),
+              _buildCompressorMetricsGrid(sensorData, isLoading),
 
-          const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-          // PSA Oxygen Generator's Parameters Section
-          _buildSectionHeader('PSA Oxygen Generator\'s Parameters'),
-          const SizedBox(height: 16),
-          _buildPSAMetricsGrid(sensorData, isLoading),
+              // PSA Oxygen Generator's Parameters Section
+              _buildSectionHeader('PSA Oxygen Generator\'s Parameters'),
+              const SizedBox(height: 16),
+              _buildPSAMetricsGrid(sensorData, isLoading),
 
-          const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-          // Dryer's Parameters Section
-          _buildSectionHeader('Dryer\'s Parameters'),
-          const SizedBox(height: 16),
-          _buildDryerMetricsGrid(sensorData, isLoading),
+              // Dryer's Parameters Section
+              _buildSectionHeader('Dryer\'s Parameters'),
+              const SizedBox(height: 16),
+              _buildDryerMetricsGrid(sensorData, isLoading),
 
-          const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-          // Booster's Parameters Section
-          _buildSectionHeader('Booster\'s Parameters'),
-          const SizedBox(height: 16),
-          _buildBoosterMetricsGrid(sensorData, isLoading),
+              // Booster's Parameters Section
+              _buildSectionHeader('Booster\'s Parameters'),
+              const SizedBox(height: 16),
+              _buildBoosterMetricsGrid(sensorData, isLoading),
+            ],
+          ),
+        ),
+        // Scroll buttons
+        Positioned(
+          right: 16,
+          top: 0,
+          bottom: 0,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildScrollButton(Icons.keyboard_arrow_up, _scrollUp),
+              const SizedBox(height: 8),
+              _buildScrollButton(Icons.keyboard_arrow_down, _scrollDown),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScrollButton(IconData icon, VoidCallback onPressed) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A).withOpacity(0.9),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.2),
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              icon,
+              color: Colors.white.withOpacity(0.9),
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1158,6 +1316,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void dispose() {
     try {
       developer.log('Disposing DashboardPage');
+      _scrollController.dispose();
       // Don't dispose the service here as it might be used by other widgets
       // The service will be disposed when the app is closed
     } catch (e) {
