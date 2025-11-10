@@ -213,7 +213,7 @@ enum SensorMetric {
   compOnStatus('comp_on_status', 'Compressor Status', ''),
   drypdpTemp('drypdp_temp', 'Dryer Temperature', '°C'),
   oxygen('oxygen', 'Oxygen Purity', '%'),
-  airOutletp('air_outletp', 'Air Outlet Pressure', 'Bar'),
+  airOutletp('air_outletp', 'Oxygen Flow', 'Bar'),
   boosterHour('booster_hour', 'Booster Hours', 'hrs'),
   compLoad('comp_load', 'Compressor Load', '%'),
   compRunningHour('comp_running_hour', 'Compressor Running Hours', 'hrs'),
@@ -232,7 +232,7 @@ enum SensorMetric {
   mh2('mh_2', 'MH 2', ''),
   mh3('mh_3', 'MH 3', ''),
   mh4('mh_4', 'MH 4', ''),
-  mh5('mh_5', 'Temperature', 'Bar'),
+  mh5('mh_5', 'Temperature', '°C'),
   volts('volts', 'Voltage', 'V'),
   power('power', 'Power', 'KW'),
   
@@ -241,6 +241,7 @@ enum SensorMetric {
   bedaPress('beda_press', 'Bed A Pressure', 'PSI'),
   bedbPress('bedb_press', 'Bed B Pressure', 'PSI'),
   recPress('rec_press', 'Reciever Pressure', 'PSI'),
+  
 
   // SCC-specific display names for Dryer and Booster sections
   pdpTemp('oxygen', 'PDP Temperature', '°C'),

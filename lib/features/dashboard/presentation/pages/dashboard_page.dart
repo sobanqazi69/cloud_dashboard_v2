@@ -1044,7 +1044,7 @@ class _DashboardPageState extends State<DashboardPage> {
     // PSA Oxygen Generator parameters: oxygen purity, oxygen flow, bed A pressure, bed B pressure, receiver pressure
     final psaMetrics = [
       SensorMetric.oxyPurity,
-      SensorMetric.oxyFlow,
+      SensorMetric.airOutletp,
       SensorMetric.bedaPress,
       SensorMetric.bedbPress,
       SensorMetric.recPress,
