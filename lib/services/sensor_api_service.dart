@@ -243,6 +243,8 @@ class SensorApiService {
           return data.mh4 != null;
         case SensorMetric.mh5:
           return data.mh5 != null;
+        case SensorMetric.i2:
+          return data.i2 != null;
         case SensorMetric.volts:
           return data.volts != null;
         case SensorMetric.power:
@@ -255,6 +257,12 @@ class SensorApiService {
           return data.bedbPress != null;
         case SensorMetric.recPress:
           return data.recPress != null;
+        case SensorMetric.pdpTemp:
+          return data.oxygen != null;
+        case SensorMetric.boosterTemp:
+          return data.drypdpTemp != null;
+        case SensorMetric.boosterRunningHours:
+          return data.boosterHour != null;
         default:
           return true;
       }
@@ -276,36 +284,60 @@ class SensorApiService {
   }
 
   /// Gets the latest SCC data with fallback values for null metrics
+  /// Falls back to most recent non-null values within the last 1 minute
   Future<SensorData?> getLatestSCCDataWithFallback() async {
     try {
-      final latestData = await getLatestSCCData();
-      if (latestData == null) return null;
+      // Fetch multiple records to have fallback data available
+      final response = await getSCCData(page: 1, limit: 100);
+      if (response.data.isEmpty) return null;
+
+      final latestData = response.data.first;
+      final now = DateTime.now();
 
       // Create a map to store fallback values for null metrics
       final Map<String, double?> fallbackValues = {};
 
-      // Define SCC metrics to check for fallback values (only the ones we want to display)
-      final sccMetrics = [
+      // Define all metrics to check for fallback values
+      final allMetrics = [
+        SensorMetric.mh5,
         SensorMetric.pressure,
         SensorMetric.trh,
         SensorMetric.trhOnLoad,
         SensorMetric.i1,
+        SensorMetric.i2,
         SensorMetric.mh1,
+        SensorMetric.mh3,
+        SensorMetric.mh4,
         SensorMetric.volts,
         SensorMetric.power,
         SensorMetric.oxyPurity,
         SensorMetric.bedaPress,
         SensorMetric.bedbPress,
         SensorMetric.recPress,
+        SensorMetric.pdpTemp,
+        SensorMetric.boosterTemp,
+        SensorMetric.boosterRunningHours,
       ];
 
-      // Check each metric for fallback values
-      for (final metric in sccMetrics) {
+      // For each metric, if it's null in the latest data, find the most recent non-null value
+      for (final metric in allMetrics) {
         if (!_hasMetricData(metric, latestData)) {
-          final fallbackValue = await getLatestNonNullSCCValueForMetric(metric);
-          if (fallbackValue != null) {
-            fallbackValues[metric.key] = fallbackValue;
-            developer.log('Using fallback value for ${metric.key}: $fallbackValue');
+          // Search through recent records (within 1 minute) for a non-null value
+          for (final data in response.data) {
+            final dataTime = data.parsedTimestamp;
+            final timeDifference = now.difference(dataTime);
+
+            // Only use data from the last 1 minute
+            if (timeDifference.inMinutes > 1) break;
+
+            if (_hasMetricData(metric, data)) {
+              final value = metric.getValue(data);
+              if (value != 0.0) {
+                fallbackValues[metric.key] = value;
+                developer.log('Using fallback value for ${metric.key}: $value (${timeDifference.inSeconds}s old)');
+                break;
+              }
+            }
           }
         }
       }

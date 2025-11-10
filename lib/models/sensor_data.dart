@@ -221,7 +221,7 @@ enum SensorMetric {
   oxyPressure('oxy_pressure', 'Oxygen Pressure', 'Bar'),
   
   // SCC metrics
-  pressure('pressure', 'Pressure', 'PSI'),
+  pressure('pressure', 'Pressure', 'Bar'),
   trh('trh', 'Total Running Hours', 'hrs'),
   trhOnLoad('trh_on_load', 'Total Running Hours On Load', 'hrs'),
   i1('i1', 'Current', 'A'),
@@ -232,7 +232,7 @@ enum SensorMetric {
   mh2('mh_2', 'MH 2', ''),
   mh3('mh_3', 'MH 3', ''),
   mh4('mh_4', 'MH 4', ''),
-  mh5('mh_5', 'MH 5', ''),
+  mh5('mh_5', 'Temperature', 'Bar'),
   volts('volts', 'Voltage', 'V'),
   power('power', 'Power', 'KW'),
   
@@ -240,7 +240,12 @@ enum SensorMetric {
   oxyPurity('oxy_purity', 'Oxygen Purity', '%'),
   bedaPress('beda_press', 'Bed A Pressure', 'PSI'),
   bedbPress('bedb_press', 'Bed B Pressure', 'PSI'),
-  recPress('rec_press', 'Reciever Pressure', 'PSI');
+  recPress('rec_press', 'Reciever Pressure', 'PSI'),
+
+  // SCC-specific display names for Dryer and Booster sections
+  pdpTemp('oxygen', 'PDP Temperature', '°C'),
+  boosterTemp('drypdp_temp', 'Booster Temperature', '°C'),
+  boosterRunningHours('booster_hour', 'Booster Running Hours', 'hrs');
 
   const SensorMetric(this.key, this.displayName, this.unit);
 
@@ -318,6 +323,14 @@ enum SensorMetric {
           return data.bedbPress ?? 0.0;
         case SensorMetric.recPress:
           return data.recPress ?? 0.0;
+
+        // SCC-specific display names for Dryer and Booster sections
+        case SensorMetric.pdpTemp:
+          return data.oxygen ?? 0.0;
+        case SensorMetric.boosterTemp:
+          return data.drypdpTemp ?? 0.0;
+        case SensorMetric.boosterRunningHours:
+          return data.boosterHour ?? 0.0;
       }
     } catch (e) {
       return 0.0;

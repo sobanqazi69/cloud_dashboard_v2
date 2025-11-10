@@ -594,12 +594,18 @@ class _MetricDetailPageState extends State<MetricDetailPage> {
       // Additional merged SCC metrics
       case SensorMetric.oxyPurity:
         return const Color(0xFF10B981); // Green for oxygen purity
+      case SensorMetric.oxyFlow:
+        return const Color(0xFF06B6D4); // Cyan for oxygen flow
       case SensorMetric.bedaPress:
         return const Color(0xFF3B82F6); // Blue for bed A pressure
       case SensorMetric.bedbPress:
         return const Color(0xFF8B5CF6); // Purple for bed B pressure
       case SensorMetric.recPress:
         return const Color(0xFFF59E0B); // Amber for recovery pressure
+
+        //add default
+        default:
+          return const Color(0xFF64748B); // Slate for default
     }
   }
 
