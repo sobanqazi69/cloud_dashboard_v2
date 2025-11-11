@@ -144,11 +144,34 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _launchTroubleshooter() async {
     final Uri url = Uri.parse('https://www.psatroubleshooter.com/');
     try {
-      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      final bool launched = await launchUrl(
+        url,
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: '_blank'
+      );
+      if (!launched) {
         developer.log('Could not launch $url');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open troubleshooter. Please try again.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (error) {
       developer.log('Error launching troubleshooter: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening troubleshooter: $error'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -492,13 +515,13 @@ class _DashboardPageState extends State<DashboardPage> {
     // For RIC system, use the original grid layout
     final allMetrics = [
       SensorMetric.oxygen,
-      SensorMetric.oxyFlow,
+      // SensorMetric.oxyFlow,
       SensorMetric.oxyPressure,
       SensorMetric.compLoad,
       SensorMetric.compRunningHour,
       SensorMetric.airiTemp,
       SensorMetric.airoTemp,
-      SensorMetric.airOutletp,
+      // SensorMetric.airOutletp,
       SensorMetric.drypdpTemp,
       SensorMetric.boostoTemp,
       SensorMetric.boosterHour,
@@ -730,8 +753,9 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildCompressorMetricsGrid(SensorData? sensorData, bool isLoading) {
-    // Compressor parameters: temperature, pressure, current, voltage, power, maintenance hours, total running hours, total running hours on load
+    // Compressor parameters: ambient temperature, discharge temperature, pressure, current, voltage, power, maintenance hours, total running hours, total running hours on load
     final compressorMetrics = [
+      SensorMetric.compOnStatus,
       SensorMetric.mh5,
       SensorMetric.pressure,
       SensorMetric.i1,
@@ -953,7 +977,7 @@ class _DashboardPageState extends State<DashboardPage> {
       case 25:
         return 'System Discharge';
       default:
-        return 'Running';
+        return 'Normal';
     }
   }
 
@@ -1182,6 +1206,7 @@ class _DashboardPageState extends State<DashboardPage> {
       case SensorMetric.boosterHour:
         return 1000;
       case SensorMetric.compOnStatus:
+        return 100;
       case SensorMetric.boosterStatus:
         return 1;
       
@@ -1256,7 +1281,7 @@ class _DashboardPageState extends State<DashboardPage> {
       case SensorMetric.boosterHour:
         return const Color(0xFF64748B); // Slate for booster hours
       case SensorMetric.compOnStatus:
-        return const Color(0xFF22C55E); // Green for compressor status
+        return const Color(0xFF06B6D4); // Cyan for ambient temperature
       case SensorMetric.boosterStatus:
         return const Color(0xFF0EA5E9); // Sky for booster status
       
