@@ -213,7 +213,7 @@ enum SensorMetric {
   compOnStatus('comp_on_status', 'Compressor Status', ''),
   drypdpTemp('drypdp_temp', 'Dryer Temperature', '°C'),
   oxygen('oxygen', 'Oxygen Purity', '%'),
-  airOutletp('air_outletp', 'Oxygen Flow', 'Bar'),
+  airOutletp('air_outletp', 'Oxygen Flow', 'm³/hr'),
   boosterHour('booster_hour', 'Booster Hours', 'hrs'),
   compLoad('comp_load', 'Compressor Load', '%'),
   compRunningHour('comp_running_hour', 'Compressor Running Hours', 'hrs'),
